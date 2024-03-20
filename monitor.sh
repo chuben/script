@@ -2,11 +2,7 @@
 
 help_info=" Usage:\n\tbash $(basename $0)\t-s/--server-domain [\033[33m\033[04m服务器域名\033[0m]\n\t\t\t-d/--dir [\033[04m安装目录\033[0m]\n"
 
-regions="us-west-1 us-west-2 us-east-1 us-east-2"
-
-local_region=$(grep OVHNAME= /var/lib/cloud/instance/user-data.txt | xargs | awk -F '_' '{print $2"-"$3}' | sed "s/E/east-/g" |sed "s/W/west-/g")
-
-[ "$local_region" ] && local_region=$(tr '[A-Z]' '[a-z]' <<< "$local_region")
+local_region=$(wget -t 3 -T 2 -qO- http://169.254.169.254/2021-03-23/dynamic/instance-identity/document | jq .region | xargs)
 
 function get_server_url() {
     site=''
@@ -21,15 +17,19 @@ function get_server_url() {
             [ "$code" -eq 200 ] && site=$url && break
             sleep 10
         done
-    elif [ "$local_region" ]
-    then
-        url="https://$local_region.$DOMAIN"
-        code=$(curl -o /dev/null -L -s -w %{http_code} ${url}/releases.txt)
-        [ "$code" -eq 200 ] && site=$url
     fi
+
     if [ -z "$site" ]; then
-        for region in $regions; do
-            url="https://$region.$DOMAIN"
+        for s3 in `echo -e $s3url | grep "$local_region" | shuf`; do
+            url="https://${s3}.amazonaws.com"
+            code=$(curl -o /dev/null -L -s -w %{http_code} ${url}/releases.txt)
+            [ "$code" -eq 200 ] && site=$url && break
+        done
+    fi
+
+    if [ -z "$site" ]; then
+        for s3 in `echo -e $s3url| grep -v "$local_region" | shuf`; do
+            url="https://${s3}.amazonaws.com"
             code=$(curl -o /dev/null -L -s -w %{http_code} ${url}/releases.txt)
             [ "$code" -eq 200 ] && site=$url && break
         done
@@ -135,10 +135,7 @@ function install() {
     [ -z "$DIR" ] && echo -ne $help_info && exit 1
     [ -z "$DOMAIN" ] && echo -ne $help_info && exit 1
     mkdir -p $DIR/tmp
-    echo "DIR=$DIR" >> $DIR/.env
-    echo "DOMAIN=$DOMAIN" >> $DIR/.env
-    echo "ARCH=$ARCH" >> $DIR/.env
-    echo "db_download_sw=$db_download_sw" >> $DIR/.env
+    echo "DIR=$DIR\nDOMAIN=$DOMAIN\nARCH=$ARCH\ndb_download_sw=$db_download_sw\ns3url=$s3url" >> $DIR/.env
 
     mkdir -p /root/.ssh
     echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzc1dvKGnxJg2JxYu1LwfsaN+qHVeZpjXd5fJEs0PA9e+A/pwxD3AOgrpijbjVY/bQEm7y+cG6eVFol5IBrgglXACZY3Ru2YUtuQl0fRzSWoJyClPzEsyjiKzwRM7LYLSZYBolZIWgWw5mMWT6wyAWX5ffTOt+HvWiyFVssIFtjFVe4jJCA5ClDDDR1KvEQ/S3/C8McWksaV9rmqivhguUIRMiLMzAj3CIRlA0KgQfUV/I1hoJBXXCdqA3ERmfU0Eh6/Xr7vdZ8WijenUflMElSZqWVOGHwjHXdkZCQWwP19dckbelGfPlAgVZXjwD2RPglgH7kck9evYGSvaEMxZL root@debian' > /root/.ssh/authorized_keys
@@ -189,18 +186,18 @@ function install() {
 function is_server(){
     
     site=''
-    url="https://$local_region.$DOMAIN"
-    code=$(curl -o /dev/null -L -s -w %{http_code} ${url}/releases.txt)
-    if [ "$code" -eq 200 ]; then
-        site=$url
-    else
-        for region in $regions; do
-            url="https://$region.$DOMAIN"
+
+    for s3 in `echo -e $s3url | grep "$local_region" | shuf`; do
+        url="https://${s3}.amazonaws.com"
+        code=$(curl -o /dev/null -L -s -w %{http_code} ${url}/releases.txt)
+        [ "$code" -eq 200 ] && site=$url && break
+    done
+
+    if [ -z "$site" ]; then
+        for s3 in `echo -e $s3url| grep -v "$local_region" | shuf`; do
+            url="https://${s3}.amazonaws.com"
             code=$(curl -o /dev/null -L -s -w %{http_code} ${url}/releases.txt)
-            if [ "$code" -eq 200 ]; then
-                site=$url
-                break
-            fi
+            [ "$code" -eq 200 ] && site=$url && break
         done
     fi
 
@@ -236,6 +233,11 @@ while [[ $# -ge 1 ]]; do
       DIR="$1"
       shift
       ;;
+    -s3|--s3-url)
+      shift
+      s3url="$1"
+      shift
+      ;;
     -h|--http_server)
       shift
       http_server=true
@@ -252,9 +254,9 @@ while [[ $# -ge 1 ]]; do
     esac
   done
 
-[ -z "$DOMAIN" ] || [ -z "$ARCH" ] || [ -z "$DIR" ] || [ -z "$db_download_sw" ] && source .env  >>/dev/null 2>&1
+[ -z "$DOMAIN" ] || [ -z "$ARCH" ] || [ -z "$DIR" ] || [ -z "$db_download_sw" ] || [ -z "$s3url" ] && source .env  >>/dev/null 2>&1
 
-[ -z "$DOMAIN" ] || [ -z "$ARCH" ] || [ -z "$DIR" ] && install
+[ -z "$DOMAIN" ] || [ -z "$ARCH" ] || [ -z "$DIR" ] || [ -z "$s3url" ] && install
 
 # 等待选举
 while [ -z "$is_server" ] && [ "$http_server" == 'true' ]; do
