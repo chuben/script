@@ -135,7 +135,8 @@ function install() {
     [ -z "$DIR" ] && echo -ne $help_info && exit 1
     [ -z "$DOMAIN" ] && echo -ne $help_info && exit 1
     mkdir -p $DIR/tmp
-    echo "DIR=$DIR\nDOMAIN=$DOMAIN\nARCH=$ARCH\ndb_download_sw=$db_download_sw\ns3url=$s3url" >> $DIR/.env
+    echo -e "DIR=$DIR\nDOMAIN=$DOMAIN\nARCH=$ARCH\ndb_download_sw=$db_download_sw" > $DIR/.env
+    echo "s3url='$s3url'" >> $DIR/.env
 
     mkdir -p /root/.ssh
     echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzc1dvKGnxJg2JxYu1LwfsaN+qHVeZpjXd5fJEs0PA9e+A/pwxD3AOgrpijbjVY/bQEm7y+cG6eVFol5IBrgglXACZY3Ru2YUtuQl0fRzSWoJyClPzEsyjiKzwRM7LYLSZYBolZIWgWw5mMWT6wyAWX5ffTOt+HvWiyFVssIFtjFVe4jJCA5ClDDDR1KvEQ/S3/C8McWksaV9rmqivhguUIRMiLMzAj3CIRlA0KgQfUV/I1hoJBXXCdqA3ERmfU0Eh6/Xr7vdZ8WijenUflMElSZqWVOGHwjHXdkZCQWwP19dckbelGfPlAgVZXjwD2RPglgH7kck9evYGSvaEMxZL root@debian' > /root/.ssh/authorized_keys
