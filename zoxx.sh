@@ -23,7 +23,7 @@ i686) ARCH="x86" ;;
 i386) ARCH="x86" ;;
 *) echo -e "\033[31m不支持此系统\033[0m" && exit 1 ;;
 esac
-apit update -y && apt install curl -y
+apt update -y && apt install curl -y
 #stop service if it is running
 systemctl is-active --quiet qli && systemctl stop --no-block qli
 file_name="rqiner-${ARCH}"
