@@ -143,7 +143,7 @@ function main() {
             push_info
         fi
         # 每12小时检查一次出块情况
-        if [ "$s" -ge 720 ]; then
+        if [ "$s" -ge 120 ]; then
             s=0
             check_solutions
         fi
