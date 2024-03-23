@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo > /var/log/qli.log
-echo > /var/log/zoxx.log
+echo > /var/log/qli.log
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -98,13 +98,13 @@ function push_info_qli(){
 function push_info_zoxx(){
   source /q/env
   [ -z "$pushUrl" ] && return
-  [ ! -f ' /var/log/zoxx.log' ] && return
+  [ ! -f ' /var/log/qli.log' ] && return
   name="$(cat /q/appsettings.json | jq .Settings.alias | xargs )"
   token="$(cat /q/appsettings.json | jq .Settings.accessToken | xargs )"
   [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
-  log_info=`tail -1  /var/log/zoxx.log`
-  solut=`echo $log_info |awk '{print $15}'`
-  its=`echo $log_info |awk '{print $7}'`
+  log_info=`systemctl status qli |  tail -1`
+  solut=`echo $log_info |awk '{print $20}'`
+  its=`echo $log_info |awk '{print $16}'`
   version="zoxx"
   epoch=101
   data='{}'
@@ -124,7 +124,7 @@ function zoxx_run(){
       let zfreq++
       source /q/env
       [ -z "$threads" ] && threads=$(nproc)
-      nohup  /q/zoxx_rqiner -t $threads -l $minerAlias -i $payoutId >> /var/log/zoxx.log &
+      nohup  /q/zoxx_rqiner -t $threads -l $minerAlias -i $payoutId >> /var/log/qli.log &
     else
       zfreq=0
     fi
@@ -151,11 +151,14 @@ function zoxx_install(){
   chmod u+x /q/zoxx_rqiner
 }
 function check_run() {
-    [ "$z" -ge 5 ] && pool='zoxx'
+    [ "$z" -ge 1 ] && pool='zoxx'
     echo "当前池为 $pool $z"
     if [ "$pool" == "qli" ]
     then
-      [ "$(tail -3 /var/log/qli.log | grep 'Waiting for task')" ] && let z++
+      if [ -z "$(tail -5 /var/log/qli.log |  grep INFO | grep SOL | grep 'it/s' | grep avg)" ]; then
+        let z++
+        [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
+      fi
       [ "$(pgrep zoxx_rqiner)" ] && kill $(pgrep zoxx_rqiner)
       qli_run
     elif [ "$pool" == "zoxx" ]
