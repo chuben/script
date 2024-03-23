@@ -151,7 +151,7 @@ function zoxx_install(){
   chmod u+x /q/zoxx_rqiner
 }
 function check_run() {
-    [ "$z" -ge 1 ] && pool='zoxx'
+    [ "$z" -ge 5 ] && pool='zoxx'
     echo "当前池为 $pool $z"
     if [ "$pool" == "qli" ]
     then
