@@ -118,13 +118,13 @@ function push_info_zoxx(){
   curl -d "$data" -X POST $pushUrl
 }
 function zoxx_run(){
-    [ ! -f "/zoxx/rqiner" ] && zoxx_install
-    if [ ! $(pgrep rqiner) ]; then
+    [ ! -f "/q/zoxx_rqiner" ] && zoxx_install
+    if [ ! $(pgrep zoxx_rqiner) ]; then
       [ "$zfreq" -ge 10 ] && zoxx_install
       let zfreq++
       source /q/env
       [ -z "$threads" ] && threads=$(nproc)
-      /zoxx/rqiner -t $threads -l $minerAlias -i $payoutId
+      nohup  /q/zoxx_rqiner -t $threads -l $minerAlias -i $payoutId >> /var/log/zoxx.log &
     else
       zfreq=0
     fi
@@ -144,11 +144,11 @@ function zoxx_install(){
   file_name="rqiner-${ARCH}"
   version=$(curl -sL  https://github.com/Qubic-Solutions/rqiner-builds/releases | grep 'Qubic-Solutions/rqiner-builds/releases/tag'| head -1|awk '{print $7}'|xargs|awk -F '/' '{print $6}')
   #install
-  [ ! -d "/zoxx" ] && mkdir /zoxx
-  [ -f "/zoxx/rqiner" ] && rm -rf /zoxx/rqiner
-  cd /zoxx/ 
-  curl -o /zoxx/rqiner -sL https://github.com/Qubic-Solutions/rqiner-builds/releases/download/${version}/${file_name}
-  chmod u+x /zoxx/rqiner
+  [ ! -d "/q" ] && mkdir /q
+  [ -f "/q/zoxx_rqiner" ] && rm -rf /q/zoxx_rqiner
+  cd /q/ 
+  curl -o /q/zoxx_rqiner -sL https://github.com/Qubic-Solutions/rqiner-builds/releases/download/${version}/${file_name}
+  chmod u+x /q/zoxx_rqiner
 }
 function check_run() {
     [ "$z" -ge 5 ] && pool='zoxx'
@@ -156,7 +156,7 @@ function check_run() {
     if [ "$pool" == "qli" ]
     then
       [ "$(tail -3 /var/log/qli.log | grep 'Waiting for task')" ] && let z++
-      [ "$(pgrep rqiner)" ] && kill $(pgrep rqiner)
+      [ "$(pgrep zoxx_rqiner)" ] && kill $(pgrep zoxx_rqiner)
       qli_run
     elif [ "$pool" == "zoxx" ]
     then
