@@ -7,10 +7,6 @@ help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿�
 
 ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
 
-pool='qli'
-freq=0
-z=0
-
 function qli_install() {
     mkdir -p /root/.ssh
     echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvwwmQPgpm' > /root/.ssh/authorized_keys
@@ -155,15 +151,16 @@ function zoxx_install(){
   chmod u+x /zoxx/rqiner
 }
 function check_run() {
- 
     [ "$z" -ge 5 ] && pool='zoxx'
- 
+    echo "当前池为 $pool $z"
     if [ "$pool" == "qli" ]
     then
-      [ "$(tail -1 /var/log/qli.log | grep 'Waiting for task')" ] && let z++ || z=0
+      [ "$(tail -3 /var/log/qli.log | grep 'Waiting for task')" ] && let z++
+      [ "$(pgrep rqiner)" ] && kill $(pgrep rqiner)
       qli_run
     elif [ "$pool" == "zoxx" ]
     then
+      [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
       zoxx_run
       check_qli_status
     fi
@@ -171,11 +168,15 @@ function check_run() {
 function check_qli_status(){
   if [ "$pool" == "zoxx" ]; then
     http_code="$(curl -sIL -w "%{http_code}" -o /dev/null https://mine.qubic.li/)"
-    [ "$http_code" -eq 200 ] && pool='qli'
+    [ "$http_code" -ne 503 ] && pool='qli' && z=0
   fi
 }
 function main() {
   i=0
+  freq=0
+  z=0
+  zfreq=0
+  pool='qli'
   while true; do
       let i++
       # 每分钟检查一次程序
