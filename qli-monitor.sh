@@ -153,7 +153,7 @@ function check_run() {
     echo "当前池为 $pool $z"
     if [ "$pool" == "qli" ]
     then
-      if [ -z "$(tail -5 /var/log/qli.log |  grep INFO | grep SOL | grep 'it/s' | grep avg)" ]; then
+      if [ ! "$(pgrep qli-runner)" ]; then
         let z++
         [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
       fi
