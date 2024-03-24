@@ -57,7 +57,7 @@ function qli_install() {
     systemctl enable --no-block qli.service
     systemctl start --no-block qli.service
     sleep 10
-    push_info
+    push_info_qli
     exit 0
 }
 function qli_run() {
