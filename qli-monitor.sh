@@ -162,6 +162,7 @@ function check_run() {
     elif [ "$pool" == "zoxx" ]
     then
       [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
+      [ "$(pgrep qli-runner)" ] && kill $(pgrep qli-runner)
       zoxx_run
       check_qli_status
     fi
