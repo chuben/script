@@ -52,6 +52,7 @@ function check_version() {
 }
 
 function download_new_version() {
+    echo "下载新版本"
     rm -rf /tmp/linux*
     wget --no-check-certificate -qO /tmp/linux-$ARCH.zip ${site}/linux-$ARCH.zip
     unzip -q /tmp/linux-$ARCH.zip -d /tmp
@@ -59,14 +60,15 @@ function download_new_version() {
 }
 
 function install_nknorg() {
+    echo "开始安装."
     if [ ! -f "/tmp/linux-${ARCH}/nknd" ] || [ "$(/tmp/linux-${ARCH}/nknd -v | awk '{print $3}')" == "$local_version" ]; then
         echo -e "\033[31m$(date +%F" "%T) Update failed\033[0m"
     else
         kill $(pgrep nknd) >>/dev/null 2>&1
         cp -rf /tmp/linux-$ARCH/* $DIR/.
         chmod +x $DIR/nkn*
-        check_status
     fi
+    systemctl restart nkn
 }
 
 function check_status() {
