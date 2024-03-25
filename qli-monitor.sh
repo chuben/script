@@ -1,7 +1,5 @@
 #!/bin/bash
 
-[ ! -f "/q/.env" ] && [ -f "/q/env" ] && cat /q/env > /q/.env
-
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
 ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
@@ -16,7 +14,7 @@ function qli_install() {
   [ "$minerAlias" ] && minerAlias="${minerAlias}_${ip}" || minerAlias=$ip
   threads=$(nproc)
   [ "$threads" -gt 8 ] && threads=$(expr $(nproc) \* 8 / 10)
-  [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && source /q/.env
+  [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && source /q/install.conf
   [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && exit
   version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | tail -1 | xargs)"
   [ -z "$version" ] && version='1.8.10'
@@ -35,7 +33,7 @@ function qli_install() {
         }
     }" | jq . > /q/appsettings.json
   wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
-  echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\npushUrl=$pushUrl\nthreads=$threads" >/q/.env
+  echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\npushUrl=$pushUrl\nthreads=$threads" >/q/install.conf
   echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=on-failure\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
   chmod u+x /q/qli-Service.sh
   chmod u+x /q/qli-Client
@@ -71,7 +69,7 @@ function qli_run() {
   fi
 }
 function push_info_qli() {
-  source /q/.env
+  source /q/install.conf
   [ -z "$pushUrl" ] && return
   [ ! -f '/var/log/qli.log' ] && return
   name="$(cat /q/appsettings.json | jq .Settings.alias | xargs)"
@@ -93,7 +91,7 @@ function push_info_qli() {
   curl -d "$data" -X POST $pushUrl
 }
 function push_info_zoxx() {
-  source /q/.env
+  source /q/install.conf
   [ -z "$pushUrl" ] && return
   name="$(jq .Settings.alias /q/appsettings.json | xargs)"
   token="$(jq .Settings.accessToken /q/appsettings.json | xargs)"
@@ -120,7 +118,7 @@ function zoxx_run() {
   if [ ! $(pgrep zoxx_rqiner) ]; then
     [ "$zfreq" -ge 10 ] && zoxx_install
     let zfreq++
-    source /q/.env
+    source /q/install.conf
     [ -z "$threads" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] && qli_install
     nohup /q/zoxx_rqiner -t $threads -l $minerAlias -i $payoutId >>/var/log/qli.log &
   else
