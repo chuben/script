@@ -219,6 +219,10 @@ while [[ $# -ge 1 ]]; do
     shift
     main
     ;;
+  -P | --push_info)
+    shift
+    push_info_qli
+    ;;
   *)
     if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
     echo -ne $help_info
