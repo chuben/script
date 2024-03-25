@@ -150,6 +150,7 @@ function zoxx_install(){
 }
 function check_run() {
     [ "$z" -ge 5 ] && pool='zoxx'
+    [ "$(pgrep qli-runner |wc -l)" -gt 1 ] && kill $(pgrep qli-runner |tail -1)
     echo "当前池为 $pool $z"
     if [ "$pool" == "qli" ]
     then
