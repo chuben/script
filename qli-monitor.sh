@@ -80,7 +80,7 @@ function push_info_qli() {
   log_info=$(tail -1 /var/log/qli.log)
   solut=$(echo $log_info | awk '{print $7}' | awk -F '/' '{print $2}')
   its=$(echo $log_info | awk '{print $15}')
-  version=$(grep 'Starting Client' /var/log/qli.log | tail -1 | awk '{print $6}')
+  version=$(/q/qli-Client --version |awk '{print $3}')
   epoch=$(echo $log_info | awk '{print $4}' | awk -F ':' '{print $2}')
   data='{}'
   data=$(jq --null-input --argjson data "$data" --arg name "$name" '$data + {$name}')
