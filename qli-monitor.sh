@@ -1,7 +1,6 @@
 #!/bin/bash
 
 {
-echo > /var/log/qli.log
 [ ! -f "/q/.env" ] && [ -f "/q/env" ] && cat /q/env > /q/.env
 } >> /dev/null 2>&1
 
@@ -187,6 +186,7 @@ function main() {
       check_qli_status
       [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
     fi
+    [ "$(wc -l /var/log/qli.log |awk '{print $1}')" -ge 5000 ] && cat /dev/null > /var/log/qli.log
     sleep 60
   done
 }
