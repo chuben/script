@@ -157,7 +157,6 @@ function check_run() {
     qli_run
   elif [ "$pool" == "zoxx" ]; then
     zoxx_run
-    check_qli_status
   fi
 }
 function check_qli_status() {
@@ -168,6 +167,7 @@ function check_qli_status() {
 }
 function main() {
   i=0
+  ii=0
   freq=0
   z=0
   zfreq=0
@@ -179,10 +179,11 @@ function main() {
     # 每10分钟上传一次状态
     if [ "$i" -ge 10 ]; then
       i=0
-      check_qli_status
       [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
+      [ "$(wc -l /var/log/qli.log |awk '{print $1}')" -ge 5000 ] && cat /dev/null > /var/log/qli.log
     fi
-    [ "$(wc -l /var/log/qli.log |awk '{print $1}')" -ge 5000 ] && cat /dev/null > /var/log/qli.log
+    # 每个小时检查一次矿池状态
+    [ "$ii" -ge 60 ] && check_qli_status || let i++
     sleep 60
   done
 }
