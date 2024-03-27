@@ -43,7 +43,7 @@ function qli_install() {
   chmod 664 /etc/systemd/system/qli.service
   systemctl daemon-reload
   systemctl enable --no-block qli.service
-  systemctl start --no-block qli.service
+  systemctl restart --no-block qli.service
   sleep 30
   push_info_qli
   exit 0
