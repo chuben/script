@@ -19,7 +19,7 @@ function qli_install() {
   version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | tail -1 | xargs)"
   [ -z "$version" ] && version='1.8.10'
   systemctl is-active --quiet qli && systemctl stop --no-block qli
-  echo "vm.nr_hugepages=$(expr $(nproc) \* 52)" >>/etc/sysctl.conf && sysctl -p
+  echo "vm.nr_hugepages=$(expr $(nproc) \* 52)" > /etc/sysctl.conf && sysctl -p
   [ ! -d "/q/" ] && mkdir /q
   [ -f "/q/qli-runner" ] && rm /q/qli-runner
   [ -f "/q/qli-runner.lock" ] && rm /q/qli-runner.lock
@@ -219,7 +219,7 @@ while [[ $# -ge 1 ]]; do
     ;;
   -P | --push_info)
     shift
-    push_info_qli
+    [ "$(pgrep qli-runner)" ] && push_info_qli || push_info_zoxx
     ;;
   *)
     if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
