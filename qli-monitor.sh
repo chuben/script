@@ -91,7 +91,7 @@ function push_info_qli() {
   data=$(jq --null-input --argjson data "$data" --arg version "$version" '$data + {$version}')
   data=$(jq --null-input --argjson data "$data" --arg token "$token" '$data + {$token}')
   data=$(jq --null-input --argjson data "$data" --arg epoch "$epoch" '$data + {$epoch}')
-  curl -d "$data" -X POST $pushUrl
+  curl -sLd "$data" -X POST $pushUrl
 }
 function push_info_zoxx() {
   source /q/install.conf
@@ -112,7 +112,7 @@ function push_info_zoxx() {
   data=$(jq --null-input --argjson data "$data" --arg version "$version" '$data + {$version}')
   data=$(jq --null-input --argjson data "$data" --arg token "$token" '$data + {$token}')
   data=$(jq --null-input --argjson data "$data" --arg epoch "$epoch" '$data + {$epoch}')
-  curl -d "$data" -X POST $pushUrl
+  curl -sLd "$data" -X POST $pushUrl
 }
 function zoxx_run() {
   [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
