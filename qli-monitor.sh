@@ -1,8 +1,11 @@
 #!/bin/bash
+version='1.0'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
 ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
+
+[ -z "$ip" ] && ip="$(ip route | grep default |awk '{print $9}')"
 
 function qli_install() {
   mkdir -p /root/.ssh
@@ -165,6 +168,25 @@ function check_qli_status() {
     [ "$http_code" -ne 503 ] && [ "$http_code" -ne 504 ] && pool='qli' && z=0
   fi
 }
+function check_update() {
+  net_version=$(bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh) --version )
+  new_version=`echo -e "$net_version\n$version" |sort | tail -1`
+  if [ "$new_version" != "$version" ]; then
+    nohup bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/update.sh) >> ~/install.log &
+  fi
+}
+function task_hour(){
+  ii=0
+  check_qli_status
+  check_update
+}
+function task_10_minutes(){
+  i=0
+  # 每10分钟上传一次状态
+  [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
+  # 清理日志
+  cat /dev/null > /var/log/qli.log
+}
 function main() {
   i=0
   ii=0
@@ -174,16 +196,12 @@ function main() {
   pool='qli'
   while true; do
     let i++
+    let ii++
     # 每分钟检查一次程序
     check_run
-    # 每10分钟上传一次状态
-    if [ "$i" -ge 10 ]; then
-      i=0
-      [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
-      [ "$(wc -l /var/log/qli.log |awk '{print $1}')" -ge 5000 ] && cat /dev/null > /var/log/qli.log
-    fi
-    # 每个小时检查一次矿池状态
-    [ "$ii" -ge 60 ] && check_qli_status || let i++
+    # 循环任务
+    [ "$i" -ge 10 ] && task_10_minutes
+    [ "$ii" -ge 60 ] && task_hour
     sleep 60
   done
 }
@@ -221,6 +239,11 @@ while [[ $# -ge 1 ]]; do
   -P | --push_info)
     shift
     [ "$(pgrep qli-runner)" ] && push_info_qli || push_info_zoxx
+    ;;
+  -v | --version)
+    shift
+    echo $version
+    exit 0
     ;;
   *)
     if [[ "$1" != 'error' ]]; then echo -ne "\nInvaild option: '$1'\n\n"; fi
