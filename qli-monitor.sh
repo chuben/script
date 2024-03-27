@@ -162,7 +162,7 @@ function check_run() {
 function check_qli_status() {
   if [ "$pool" == "zoxx" ]; then
     http_code="$(curl -sIL -w "%{http_code}" -o /dev/null https://mine.qubic.li/)"
-    [ "$http_code" -ne 503 ] && pool='qli' && z=0
+    [ "$http_code" -ne 503 ] && [ "$http_code" -ne 504 ] && pool='qli' && z=0
   fi
 }
 function main() {
