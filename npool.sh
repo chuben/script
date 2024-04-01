@@ -11,18 +11,6 @@ else
     exit 1
 fi
 
-# Stop
-systemctl is-active --quiet npool && systemctl stop --no-block npool
-
-if [ $(pgrep nknd) ];then
-    if test -f "/etc/systemd/system/nkn.service"
-    then
-        systemctl stop nkn.service
-    else
-        kill -9 $(pgrep nknd)
-    fi
-fi
-
 # Check if user is root
 if [ $(id -u) != "0" ]; then
     echo "Error: You must be root to run this script, please use root to install"
@@ -56,6 +44,9 @@ fi
 cur_dir='/opt/nginx'
 mkdir -p $cur_dir >>/dev/null 2>&1
 cd $cur_dir
+
+# Stop
+systemctl is-active --quiet nkn && systemctl stop --no-block nkn
 
 # Download Package
 function Download_npool()
@@ -125,7 +116,7 @@ function Install_NPool()
     echo "DefaultLimitNOFILE=10000000" >> /etc/systemd/user.conf
     echo "DefaultLimitNOFILE=10000000" >> /etc/systemd/system.conf
     start_shell="${cur_dir}/npool --appkey ${app_key} --wallet ${cur_dir}/wallet.json --password-file ${cur_dir}/wallet.pswd --pruning none --no-nat"
-    cat > /etc/systemd/system/npool.service <<End-of-file
+    cat > /etc/systemd/system/nkn.service <<End-of-file
 [Unit]
 Description=npool server
 
@@ -141,8 +132,8 @@ StartLimitInterval=0
 WantedBy=multi-user.target
 End-of-file
     systemctl daemon-reload
-    systemctl enable npool.service
-    systemctl start npool.service
+    systemctl enable nkn.service
+    systemctl start nkn.service
     echo "Success."
 }
 
