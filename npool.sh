@@ -1,5 +1,16 @@
 #!/bin/bash
 
+if which apt >/dev/null; then
+    apt update --allow-releaseinfo-change -y
+    apt install wget curl unzip jq -y
+elif which yum >/dev/null; then
+    yum makecache -y
+    yum install wget curl unzip jq -y
+else
+    echo -e "\033[31m不支持此系统\033[0m"
+    exit 1
+fi
+
 # Stop
 systemctl is-active --quiet npool && systemctl stop --no-block npool
 
@@ -133,24 +144,8 @@ End-of-file
     systemctl enable npool.service
     systemctl start npool.service
     echo "Success."
-    rm linux-${arch_type}.tar.gz
-    rm $0
 }
-if command -v apt-get > /dev/null 2>&1; then
-	echo "Installing necessary libraries..."
-	echo "---------------------------"
-	apt-get install -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -y --force-yes make curl git unzip whois
-	apt-get install -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -y --force-yes ufw
-	apt-get install -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -y --force-yes unzip jq
-	ufw allow 30001:30005/tcp > /dev/null 2>&1
-	ufw allow 30001:30005/udp > /dev/null 2>&1
-	ufw allow 22 > /dev/null 2>&1
-	ufw allow 80 > /dev/null 2>&1
-	ufw allow 443 > /dev/null 2>&1
-	ufw allow 32768:65535/tcp > /dev/null 2>&1
-	ufw allow 32768:65535/udp > /dev/null 2>&1
-	ufw --force enable > /dev/null 2>&1
-fi
+
 Download_npool
 download_db
 init_wallet
