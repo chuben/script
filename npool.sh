@@ -86,7 +86,7 @@ function get_server_url() {
 
 function download_db() {
     du -s ChainDB
-    [ "$(du -s $cur_dir/ChainDB | awk '{print $1}')" -gt 4000000 ] && return 0
+    [ -d "$cur_dir/ChainDB" ] && [ "$(du -s $cur_dir/ChainDB | awk '{print $1}')" -gt 4000000 ] && return 0
     [ -z "$s3url" ] && return 1
     [ ! -d "$cur_dir/tmp" ] && mkdir -p $cur_dir/tmp
     get_server_url

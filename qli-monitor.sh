@@ -19,7 +19,7 @@ function qli_install() {
   [ "$threads" -gt 8 ] && threads=$(expr $(nproc) \* 8 / 10)
   [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && source /q/install.conf
   [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && exit
-  version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | tail -1 | xargs)"
+  version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | grep -v beta | tail -1 | xargs)"
   [ -z "$version" ] && version='1.8.10'
   systemctl is-active --quiet qli && systemctl stop --no-block qli
   echo "vm.nr_hugepages=$(expr $(nproc) \* 52)" > /etc/sysctl.conf && sysctl -p
