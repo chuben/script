@@ -16,7 +16,7 @@ function qli_install() {
   [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
   [ "$minerAlias" ] && minerAlias="${minerAlias}_${ip}" || minerAlias=$ip
   threads=$(nproc)
-  [ "$threads" -gt 8 ] && threads=$(expr $(nproc) \* 8 / 10)
+  [ "$threads" -gt 8 ] && threads=$(expr $(nproc) - 1)
   [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && source /q/install.conf
   [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && exit
   version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | grep -v beta | tail -1 | xargs)"
