@@ -179,6 +179,8 @@ function task_hour(){
   ii=0
   check_qli_status
   check_update
+  epoch=$(tail -1 /var/log/qli.log | awk '{print $4}' | awk -F ':' '{print $2}')
+  [ -f "/q/stats.${epoch}.lock" ] && sed -i "s/:true/:false/g" /q/stats.${epoch}.lock
 }
 function task_10_minutes(){
   i=0
