@@ -1,5 +1,5 @@
 #!/bin/bash
-version='1.0'
+version='1.1'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -22,7 +22,7 @@ function qli_install() {
   version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | grep -v beta | tail -1 | xargs)"
   [ -z "$version" ] && version='1.8.10'
   systemctl is-active --quiet qli && systemctl stop --no-block qli
-  echo "vm.nr_hugepages=$(expr $(nproc) \* 95)" > /etc/sysctl.conf && sysctl -p
+  echo "vm.nr_hugepages=$(expr $(nproc) \* 165)" > /etc/sysctl.conf && sysctl -p
   [ ! -d "/q/" ] && mkdir /q
   [ -f "/q/qli-runner" ] && rm /q/qli-runner
   [ -f "/q/qli-runner.lock" ] && rm /q/qli-runner.lock
@@ -103,7 +103,7 @@ function push_info_zoxx() {
   solut=$(echo $log_info | awk '{print $20}')
   its=$(echo $log_info | awk '{print $16}')
   version="zoxx"
-  epoch=101
+  epoch=$(wget -qO - https://pooltemp.qubic.solutions/info | jq .epoch)
   data='{}'
   data=$(jq --null-input --argjson data "$data" --arg name "$name" '$data + {$name}')
   data=$(jq --null-input --argjson data "$data" --arg ip "$ip" '$data + {$ip}')
@@ -117,10 +117,8 @@ function push_info_zoxx() {
 function zoxx_run() {
   [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
   [ "$(pgrep qli-runner)" ] && kill $(pgrep qli-runner)
-  [ ! -f "/q/zoxx_rqiner" ] && zoxx_install
+  zoxx_install
   if [ ! $(pgrep zoxx_rqiner) ]; then
-    [ "$zfreq" -ge 10 ] && zoxx_install
-    let zfreq++
     source /q/install.conf
     [ -z "$threads" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] && qli_install
     nohup /q/zoxx_rqiner -t $threads -l $minerAlias -i $payoutId >>/var/log/qli.log &
