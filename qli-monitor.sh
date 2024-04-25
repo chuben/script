@@ -1,5 +1,5 @@
 #!/bin/bash
-version='1.1'
+script_version='1.2'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -64,7 +64,7 @@ function qli_run() {
     z=0
   fi
 
-  if [ ! $(pgrep qli-Client) ]; then
+  if [ ! "$(pgrep qli-Client)" ]; then
     cd /q && nohup /q/qli-Client -service >>/var/log/qli.log &
     let freq++
   else
@@ -118,7 +118,7 @@ function zoxx_run() {
   [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
   [ "$(pgrep qli-runner)" ] && kill $(pgrep qli-runner)
   zoxx_install
-  if [ ! $(pgrep zoxx_rqiner) ]; then
+  if [ ! "$(pgrep zoxx_rqiner)" ]; then
     source /q/install.conf
     [ -z "$threads" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] && qli_install
     nohup /q/zoxx_rqiner -t $threads -l $minerAlias -i $payoutId >>/var/log/qli.log &
@@ -168,9 +168,16 @@ function check_qli_status() {
 }
 function check_update() {
   net_version=$(bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh) --version )
-  new_version=`echo -e "$net_version\n$version" |sort | tail -1`
-  if [ "$new_version" != "$version" ]; then
+  new_version=`echo -e "$net_version\n$script_version" |sort | tail -1`
+  if [ "$new_version" != "$script_version" ]; then
     nohup bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/update.sh) >> ~/install.log &
+  else
+    net_client_version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | grep -v beta | tail -1 | xargs)"
+    local_client_version=$(/q/qli-Client --version|awk '{print $3}')
+    client_version=`echo -e "$local_client_version\n$net_client_version" |sort | tail -1`
+    if [ "$client_version" != "$local_client_version" ]; then
+      nohup bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/update.sh) >> ~/install.log &
+    fi
   fi
 }
 function task_hour(){
@@ -188,6 +195,7 @@ function task_10_minutes(){
   cat /dev/null > /var/log/qli.log
 }
 function main() {
+  check_update
   i=0
   ii=0
   freq=0
@@ -242,7 +250,7 @@ while [[ $# -ge 1 ]]; do
     ;;
   -v | --version)
     shift
-    echo $version
+    echo $script_version
     exit 0
     ;;
   *)
