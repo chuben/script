@@ -250,6 +250,10 @@ while [[ $# -ge 1 ]]; do
     shift
     [ "$(pgrep qli-runner)" ] && push_info_qli || push_info_zoxx
     ;;
+  -u | --update)
+    shift
+    check_update
+    ;;
   -v | --version)
     shift
     echo $script_version
