@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='1.2'
+script_version='1.3'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -43,10 +43,7 @@ function qli_install() {
   chmod 664 /etc/systemd/system/qli.service
   systemctl daemon-reload
   systemctl enable --no-block qli.service
-  systemctl restart --no-block qli.service
-  sleep 30
-  push_info_qli
-  exit 0
+  reboot
 }
 function qli_run() {
   [ "$(pgrep zoxx_rqiner)" ] && kill $(pgrep zoxx_rqiner)
@@ -65,6 +62,7 @@ function qli_run() {
   fi
 
   if [ ! "$(pgrep qli-Client)" ]; then
+    check_nr_hugepages
     cd /q && nohup /q/qli-Client -service >>/var/log/qli.log &
     let freq++
   else
@@ -193,6 +191,10 @@ function task_10_minutes(){
   [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
   # 清理日志
   cat /dev/null > /var/log/qli.log
+}
+function check_nr_hugepages(){
+  hugepages=$(tail -30 /var/log/qli.log | grep 'vm.nr_hugepages' |tail -1 |awk -F '=' '{print $2}')
+  [ "$hugepages" ] && echo "vm.nr_hugepages=$hugepages" > /etc/sysctl.conf && sysctl -p
 }
 function main() {
   check_update
