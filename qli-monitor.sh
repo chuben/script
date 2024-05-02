@@ -22,7 +22,7 @@ function qli_install() {
   version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | grep -v beta | tail -1 | xargs)"
   [ -z "$version" ] && version='1.8.10'
   systemctl is-active --quiet qli && systemctl stop --no-block qli
-  echo "vm.nr_hugepages=$(expr $(nproc) \* 165)" > /etc/sysctl.conf && sysctl -p
+  echo "vm.nr_hugepages=$(expr $(nproc) \* 600)" > /etc/sysctl.conf && sysctl -p
   [ ! -d "/q/" ] && mkdir /q
   [ -f "/q/qli-runner" ] && rm /q/qli-runner
   [ -f "/q/qli-runner.lock" ] && rm /q/qli-runner.lock
