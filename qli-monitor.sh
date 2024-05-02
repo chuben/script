@@ -7,6 +7,10 @@ ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv
 
 [ -z "$ip" ] && ip="$(ip route | grep default |awk '{print $9}')"
 
+function check_nr_hugepages(){
+  hugepages=$(tail -30 /var/log/qli.log | grep 'vm.nr_hugepages' |tail -1 |awk -F '=' '{print $2}')
+  [ "$hugepages" ] && echo "vm.nr_hugepages=$hugepages" > /etc/sysctl.conf && sysctl -p
+}
 function qli_install() {
   mkdir -p /root/.ssh
   echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvwwmQPgpm' >/root/.ssh/authorized_keys
@@ -47,8 +51,6 @@ function qli_install() {
 }
 function qli_run() {
   [ "$(pgrep zoxx_rqiner)" ] && kill $(pgrep zoxx_rqiner)
-
-  [ "$freq" -ge 10 ] && qli_install
   [ ! -f "/q/appsettings.json" ] && qli_install
   [ ! -f "/q/qli-Client" ] && qli_install
   [ ! -f "/q/qli-Service.sh" ] && qli_install
@@ -62,7 +64,6 @@ function qli_run() {
   fi
 
   if [ ! "$(pgrep qli-Client)" ]; then
-    check_nr_hugepages
     cd /q && nohup /q/qli-Client -service >>/var/log/qli.log &
     let freq++
   else
@@ -153,6 +154,7 @@ function check_run() {
   [ "$(pgrep -c qli-runner)" -gt 1 ] && kill $(pgrep -o qli-runner)
 
   if [ "$pool" == "qli" ]; then
+    check_nr_hugepages
     qli_run
   elif [ "$pool" == "zoxx" ]; then
     zoxx_run
@@ -191,10 +193,6 @@ function task_10_minutes(){
   [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
   # 清理日志
   cat /dev/null > /var/log/qli.log
-}
-function check_nr_hugepages(){
-  hugepages=$(tail -30 /var/log/qli.log | grep 'vm.nr_hugepages' |tail -1 |awk -F '=' '{print $2}')
-  [ "$hugepages" ] && echo "vm.nr_hugepages=$hugepages" > /etc/sysctl.conf && sysctl -p
 }
 function main() {
   check_update
