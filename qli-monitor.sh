@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='1.3'
+script_version='1.4'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -92,7 +92,8 @@ function push_info_qli() {
   data=$(jq --null-input --argjson data "$data" --arg epoch "$epoch" '$data + {$epoch}')
   for i in `seq 1 5`; do
     resp=`curl -sLd "$data" -X POST $pushUrl`
-    [ "$(echo $resp | jq .code)" -eq 20000 ] && break | sleep 5
+    echo $resp | jq .message
+    [ "$(echo $resp | jq .code)" -eq 20000 ] && break || sleep 5
   done
 }
 function push_info_zoxx() {
@@ -116,6 +117,7 @@ function push_info_zoxx() {
   data=$(jq --null-input --argjson data "$data" --arg epoch "$epoch" '$data + {$epoch}')
   for i in `seq 1 5`; do
     resp=`curl -sLd "$data" -X POST $pushUrl`
+    echo $resp | jq .message
     [ "$(echo $resp | jq .code)" -eq 20000 ] && break | sleep 5
   done
 }
