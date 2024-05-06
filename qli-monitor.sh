@@ -48,8 +48,7 @@ function qli_install() {
   systemctl daemon-reload
   systemctl enable --no-block qli.service
   systemctl restart qli.service
-  sleep 30
-  push_info_qli
+  exit 10
 }
 function qli_run() {
   [ "$(pgrep zoxx_rqiner)" ] && kill $(pgrep zoxx_rqiner)
