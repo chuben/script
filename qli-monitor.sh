@@ -201,7 +201,7 @@ function task_hour(){
 function task_10_minutes(){
   i=0
   # 每10分钟上传一次状态
-  [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
+  # [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
   # 清理日志
   cat /dev/null > /var/log/qli.log
 }
