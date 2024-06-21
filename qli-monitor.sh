@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='1.6'
+script_version='1.7'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -40,14 +40,18 @@ function qli_install() {
         }
     }" | jq . > /q/appsettings.json
   wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
+  wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh >/update.sh
   echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\npushUrl=$pushUrl\nthreads=$threads" >/q/install.conf
   echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
   chmod u+x /q/qli-Service.sh
+  chmod u+x /q/update.sh
   chmod u+x /q/qli-Client
   chmod 664 /etc/systemd/system/qli.service
   systemctl daemon-reload
   systemctl enable --no-block qli.service
   systemctl restart qli.service
+  apt install cron -y
+  echo '33 * * * * /q/update.sh' > /var/spool/cron/crontabs/root
   exit 10
 }
 function qli_run() {
@@ -175,26 +179,9 @@ function check_qli_status() {
     [ "$http_code" -ne 503 ] && [ "$http_code" -ne 504 ] && pool='qli' && z=0
   fi
 }
-function check_update() {
-  net_version=$(bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh) --version )
-  new_version=`echo -e "$net_version\n$script_version" |sort | tail -1`
-  if [ "$new_version" != "$script_version" ]; then
-    echo "开始更新脚本"
-    nohup bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/update.sh) >> ~/install.log &
-  else
-    net_client_version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | grep -v beta | tail -1 | xargs)"
-    local_client_version=$(/q/qli-Client --version|awk '{print $3}')
-    client_version=`echo -e "$local_client_version\n$net_client_version" |sort | tail -1`
-    if [ "$client_version" != "$local_client_version" ]; then
-      echo "开始更新客户端"
-      nohup bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/update.sh) >> ~/install.log &
-    fi
-  fi
-}
 function task_hour(){
   ii=0
   check_qli_status
-  check_update
   epoch=$(tail -1 /var/log/qli.log | awk '{print $4}' | awk -F ':' '{print $2}')
   [ -f "/q/stats.${epoch}.lock" ] && sed -i "s/:true/:false/g" /q/stats.${epoch}.lock
 }
@@ -211,7 +198,6 @@ function task_10_minutes(){
   cat /dev/null > /var/log/qli.log
 }
 function main() {
-  check_update
   i=0
   ii=0
   freq=0
@@ -263,10 +249,6 @@ while [[ $# -ge 1 ]]; do
   -P | --push_info)
     shift
     [ "$(pgrep qli-runner)" ] && push_info_qli || push_info_zoxx
-    ;;
-  -u | --update)
-    shift
-    check_update
     ;;
   -v | --version)
     shift

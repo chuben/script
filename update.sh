@@ -10,8 +10,12 @@ apt update -y && apt install wget jq curl -y
 
 alias="$(echo $minerAlias | awk -F '-' '{print $1}'|awk -F '_' '{print $1}')"
 
-# country=$(wget -qO - http://ipinfo.io | jq .country | xargs )
+country=$(wget -qO - http://ipinfo.io | jq .country | xargs )
 
-bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh ) --access-token $accessToken --miner-alias $alias  --payout-id $payoutId --push-url $pushUrl --install
+instype=$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/instance-type| sed "s/xlarge//g"|sed "s/\.//g")
+
+tag="${alias}_${instype}_${country}"
+
+bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh ) --access-token $accessToken --miner-alias $tag  --payout-id $payoutId --push-url $pushUrl --install
 
 systemctl restart qli
