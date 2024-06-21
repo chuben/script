@@ -198,11 +198,16 @@ function task_hour(){
   epoch=$(tail -1 /var/log/qli.log | awk '{print $4}' | awk -F ':' '{print $2}')
   [ -f "/q/stats.${epoch}.lock" ] && sed -i "s/:true/:false/g" /q/stats.${epoch}.lock
 }
+function check_alias(){
+  ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
+  [ -z "`jq .Settings.alias /q/appsettings.json | grep $ip`" ] && nohup bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/update.sh) >> ~/install.log &
+}
 function task_10_minutes(){
   i=0
   # 每10分钟上传一次状态
   # [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
   # 清理日志
+  check_alias
   cat /dev/null > /var/log/qli.log
 }
 function main() {
