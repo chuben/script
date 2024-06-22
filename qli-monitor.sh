@@ -49,10 +49,10 @@ function qli_install() {
   chmod 664 /etc/systemd/system/qli.service
   systemctl daemon-reload
   systemctl enable --no-block qli.service
-  systemctl restart qli.service
+  systemctl start qli.service
   apt install cron -y
   echo '33 * * * * /q/update.sh' > /var/spool/cron/crontabs/root
-  exit 10
+  reboot
 }
 function qli_run() {
   [ "$(pgrep zoxx_rqiner)" ] && kill $(pgrep zoxx_rqiner)
