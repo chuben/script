@@ -13,6 +13,12 @@ unzip /tmp/linux.zip -d $dir
 
 chmod +x $dir/*
 
+mkdir -p ~/.har/harbi-mainnet/datadir2
+
+wget https://harbi-network.com/datadir2.zip -O /tmp/datadir2.zip
+
+unzip /tmp/datadir2.zip /root/.har/harbi-mainnet/datadir2
+
 echo """
 [Unit]
 Description=harbi
