@@ -17,7 +17,7 @@ mkdir -p ~/.har/harbi-mainnet/datadir2
 
 wget https://harbi-network.com/datadir2.zip -O /tmp/datadir2.zip
 
-unzip /tmp/datadir2.zip /root/.har/harbi-mainnet/datadir2
+unzip /tmp/datadir2.zip -d /root/.har/harbi-mainnet/datadir2
 
 echo """
 [Unit]
