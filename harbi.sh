@@ -13,9 +13,9 @@ unzip /tmp/linux.zip -d $dir
 
 chmod +x $dir/*
 
-mkdir -p ~/.har/harbi-mainnet/datadir2
+mkdir -p ~/.har/harbi-mainnet
 
-wget https://harbi-network.com/datadir2.zip -O /tmp/datadir2.zip
+wget https://harbi.aws2024.shop/datadir2.tar.gz -O - | tar -zxf - -C ~/.har/harbi-mainnet/
 
 unzip /tmp/datadir2.zip -d /root/.har/harbi-mainnet/datadir2
 
