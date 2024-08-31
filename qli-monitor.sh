@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='1.7'
+script_version='1.8'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -20,11 +20,10 @@ function qli_install() {
   [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
   [ "$minerAlias" ] && minerAlias="${minerAlias}_${ip}" || minerAlias=$ip
   threads=$(nproc)
-  [ "$threads" -gt 8 ] && threads=$(expr $(nproc) - 1)
   [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && source /q/install.conf
   [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && exit
   version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | grep -v beta | tail -1 | xargs)"
-  [ -z "$version" ] && version='1.8.10'
+  [ -z "$version" ] && version='2.1.1'
   systemctl is-active --quiet qli && systemctl stop --no-block qli
   echo "vm.nr_hugepages=$(expr $(nproc) \* 600)" > /etc/sysctl.conf && sysctl -p
   [ ! -d "/q/" ] && mkdir /q
