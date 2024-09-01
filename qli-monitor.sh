@@ -48,7 +48,7 @@ function qli_install() {
   systemctl enable --no-block qli.service
   systemctl start qli.service
   apt install cron -y
-  echo "$((RANDOM % 60)) * * * * bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh)" > /var/spool/cron/crontabs/root
+  echo "$((RANDOM % 60)) * * * * root wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash" >> /etc/crontab 
   reboot
 }
 function qli_run() {
