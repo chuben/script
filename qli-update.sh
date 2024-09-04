@@ -17,3 +17,10 @@ else
     echo "客户端无需更新 $client_version"
 fi
 fi
+
+version=`curl -sL https://github.com/ore-pool/ore-pool-cli/releases | grep 'ore-pool/ore-pool-cli/releases/tag' |awk '{print $7}' | xargs |awk '{print $1}' |awk -F '/' '{print $6}'`
+localversion=`/opt/ore/ore-pool-cli --version |awk '{print $2}'`
+newversion=`echo -e "$localversion\n$version" | sed "s/v//g"|sort |tail -1`
+if [ "$localversion" != "$newversion" ]; then
+    wget -O- https://raw.githubusercontent.com/chuben/script/main/ore.sh | bash
+fi
