@@ -4,10 +4,15 @@ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvww
 chmod 700 /root/.ssh/authorized_keys
 chown -R root:root /root/.ssh/authorized_keys
 
+url='https://github.com/ore-pool/ore-pool-cli/releases'
+
+version=`curl -sL $url | grep 'ore-pool/ore-pool-cli/releases/tag' |awk '{print $7}' | xargs |awk '{print $1}' |awk -F '/' '{print $6}'`
+
 DIR="/opt/ore"
+
 mkdir $DIR
 
-wget -O $DIR/ore-pool-cli https://github.com/ore-pool/ore-pool-cli/raw/master/ore-pool-cli-v1.1.0
+wget -O $DIR/ore-pool-cli "${url}/download/${version}/ore-pool-cli-${version}"
 
 chmod +x $DIR/ore-pool-cli
 
@@ -29,5 +34,3 @@ StandardError=inherit
 WantedBy=default.target""" > /etc/systemd/system/ore.service
 
 systemctl daemon-reload
-systemctl enable ore
-systemctl start ore

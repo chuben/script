@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='1.8'
+script_version='1.9'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -47,160 +47,45 @@ function qli_install() {
   systemctl daemon-reload
   systemctl enable --no-block qli.service
   systemctl start qli.service
-  apt install cron -y
-  echo "$((RANDOM % 60)) * * * * root wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash" >> /etc/crontab 
   reboot
 }
 function qli_run() {
-  [ "$(pgrep zoxx_rqiner)" ] && kill $(pgrep zoxx_rqiner)
   [ ! -f "/q/appsettings.json" ] && qli_install
   [ ! -f "/q/qli-Client" ] && qli_install
   [ ! -f "/q/qli-Service.sh" ] && qli_install
 
-  # 如果runner未运行，杀死client
   if [ ! "$(pgrep qli-runner)" ]; then
-    let z++
-    [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
-  else
-    z=0
+    if [ "$(tail -10 /var/log/qli.log | grep 'Idling')" ]; then
+        ore
+    else
+        systemctl stop ore
+        [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
   fi
 
   if [ ! "$(pgrep qli-Client)" ]; then
     cd /q && nohup /q/qli-Client -service >>/var/log/qli.log &
-    let freq++
-  else
-    freq=0
   fi
-}
-function push_info_qli() {
-  source /q/install.conf
-  [ -z "$pushUrl" ] && return
-  [ ! -f '/var/log/qli.log' ] && return
-  name="$(cat /q/appsettings.json | jq .Settings.alias | xargs)"
-  token="$(cat /q/appsettings.json | jq .Settings.accessToken | xargs)"
-  [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
-  log_info=$(tail -1 /var/log/qli.log)
-  solut=$(echo $log_info | awk '{print $7}' | awk -F '/' '{print $2}')
-  its=$(echo $log_info | awk '{print $15}')
-  version=$(/q/qli-Client --version |awk '{print $3}')
-  epoch=$(echo $log_info | awk '{print $4}' | awk -F ':' '{print $2}')
-  data='{}'
-  data=$(jq --null-input --argjson data "$data" --arg name "$name" '$data + {$name}')
-  data=$(jq --null-input --argjson data "$data" --arg ip "$ip" '$data + {$ip}')
-  data=$(jq --null-input --argjson data "$data" --arg its "$its" '$data + {$its}')
-  data=$(jq --null-input --argjson data "$data" --arg solut "$solut" '$data + {$solut}')
-  data=$(jq --null-input --argjson data "$data" --arg version "$version" '$data + {$version}')
-  data=$(jq --null-input --argjson data "$data" --arg token "$token" '$data + {$token}')
-  data=$(jq --null-input --argjson data "$data" --arg epoch "$epoch" '$data + {$epoch}')
-  for i in `seq 1 5`; do
-    resp=`curl -sLd "$data" -X POST $pushUrl`
-    echo $resp | jq .message
-    [ "$(echo $resp | jq .code)" -eq 20000 ] && break || sleep 5
-  done
-}
-function push_info_zoxx() {
-  source /q/install.conf
-  [ -z "$pushUrl" ] && return
-  name="$(jq .Settings.alias /q/appsettings.json | xargs)"
-  token="$(jq .Settings.accessToken /q/appsettings.json | xargs)"
-  [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
-  log_info=$(systemctl status qli | tail -1)
-  solut=$(echo $log_info | awk '{print $20}')
-  its=$(echo $log_info | awk '{print $16}')
-  version="zoxx"
-  epoch=$(wget -qO - https://pooltemp.qubic.solutions/info | jq .epoch)
-  data='{}'
-  data=$(jq --null-input --argjson data "$data" --arg name "$name" '$data + {$name}')
-  data=$(jq --null-input --argjson data "$data" --arg ip "$ip" '$data + {$ip}')
-  data=$(jq --null-input --argjson data "$data" --arg its "$its" '$data + {$its}')
-  data=$(jq --null-input --argjson data "$data" --arg solut "$solut" '$data + {$solut}')
-  data=$(jq --null-input --argjson data "$data" --arg version "$version" '$data + {$version}')
-  data=$(jq --null-input --argjson data "$data" --arg token "$token" '$data + {$token}')
-  data=$(jq --null-input --argjson data "$data" --arg epoch "$epoch" '$data + {$epoch}')
-  for i in `seq 1 5`; do
-    resp=`curl -sLd "$data" -X POST $pushUrl`
-    echo $resp | jq .message
-    [ "$(echo $resp | jq .code)" -eq 20000 ] && break | sleep 5
-  done
-}
-function zoxx_run() {
-  [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
-  [ "$(pgrep qli-runner)" ] && kill $(pgrep qli-runner)
-  zoxx_install
-  if [ ! "$(pgrep zoxx_rqiner)" ]; then
-    source /q/install.conf
-    [ -z "$threads" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] && qli_install
-    nohup /q/zoxx_rqiner -t $threads -l $minerAlias -i $payoutId >>/var/log/qli.log &
-  else
-    zfreq=0
-  fi
-}
-function zoxx_install() {
-  case $(uname -m) in
-  armv5*) ARCH="aarch64" ;;
-  armv6*) ARCH="aarch64" ;;
-  armv7*) ARCH="aarch64" ;;
-  aarch64) ARCH="aarch64" ;;
-  x86) ARCH="x86" ;;
-  x86_64) ARCH="x86" ;;
-  i686) ARCH="x86" ;;
-  i386) ARCH="x86" ;;
-  *) echo -e "\033[31m不支持此系统\033[0m" && exit 1 ;;
-  esac
-  file_name="rqiner-${ARCH}"
-  version=$(curl -sL https://github.com/Qubic-Solutions/rqiner-builds/releases | grep 'Qubic-Solutions/rqiner-builds/releases/tag' | head -1 | awk '{print $7}' | xargs | awk -F '/' '{print $6}')
-  #install
-  [ ! -d "/q" ] && mkdir /q
-  [ -f "/q/zoxx_rqiner" ] && rm -rf /q/zoxx_rqiner
-  cd /q/
-  curl -o /q/zoxx_rqiner -sL https://github.com/Qubic-Solutions/rqiner-builds/releases/download/${version}/${file_name}
-  chmod u+x /q/zoxx_rqiner
 }
 function check_run() {
-  [ "$z" -ge 5 ] && pool='zoxx'
-  echo "当前池为 $pool $z"
-
   # 如果有多个runner进程，杀死最久的那个
   [ "$(pgrep -c qli-runner)" -gt 1 ] && kill $(pgrep -o qli-runner)
-
-  if [ "$pool" == "qli" ]; then
-    check_nr_hugepages
-    qli_run
-  elif [ "$pool" == "zoxx" ]; then
-    zoxx_run
-  fi
-}
-function check_qli_status() {
-  if [ "$pool" == "zoxx" ]; then
-    http_code="$(curl -sIL -w "%{http_code}" -o /dev/null https://mine.qubic.li/)"
-    [ "$http_code" -ne 503 ] && [ "$http_code" -ne 504 ] && pool='qli' && z=0
-  fi
+  check_nr_hugepages
+  qli_run
 }
 function task_hour(){
   ii=0
-  check_qli_status
   epoch=$(tail -1 /var/log/qli.log | awk '{print $4}' | awk -F ':' '{print $2}')
   [ -f "/q/stats.${epoch}.lock" ] && sed -i "s/:true/:false/g" /q/stats.${epoch}.lock
-}
-function check_alias(){
-  ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
-  [ -z "`jq .Settings.alias /q/appsettings.json | grep $ip`" ] && nohup bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/update.sh) >> ~/install.log &
+  wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash
 }
 function task_10_minutes(){
   i=0
-  # 每10分钟上传一次状态
-  # [ "$pool" == "qli" ] && push_info_qli || push_info_zoxx
   # 清理日志
-  check_alias
   cat /dev/null > /var/log/qli.log
 }
 function main() {
   i=0
   ii=0
-  freq=0
-  z=0
-  zfreq=0
-  pool='qli'
   while true; do
     let i++
     let ii++
@@ -212,7 +97,22 @@ function main() {
     sleep 60
   done
 }
-
+function ore() {
+    if [ -f "/opt/ore/ore-pool-cli" ]; then
+        wget -O- https://raw.githubusercontent.com/chuben/script/main/ore.sh | bash
+        systemctl start ore
+    else
+        version=`curl -sL https://github.com/ore-pool/ore-pool-cli/releases | grep 'ore-pool/ore-pool-cli/releases/tag' |awk '{print $7}' | xargs |awk '{print $1}' |awk -F '/' '{print $6}'`
+        localversion=`/opt/ore/ore-pool-cli --version |awk '{print $2}'`
+        newversion=`echo -e "$localversion\n$version" | sed "s/v//g"|sort |tail -1`
+        if [ "$localversion" != "$newversion" ]; then
+            wget -O- https://raw.githubusercontent.com/chuben/script/main/ore.sh | bash
+            systemctl start ore
+        else
+            systemctl start ore
+        fi
+    fi
+}
 while [[ $# -ge 1 ]]; do
   case $1 in
   -t | --access-token)
