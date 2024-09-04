@@ -56,10 +56,14 @@ function qli_run() {
 
   if [ ! "$(pgrep qli-runner)" ]; then
     if [ "$(tail -10 /var/log/qli.log | grep 'Idling')" ]; then
-        echo 'Idling 状态，切换为ore'
-        ore
+        if [ "$(pgrep ore-pool-cli)" ]; then
+            echo 'ore-pool-cli 运行中'
+        else
+            echo 'Idling 状态，切换为ore'
+            ore
+        fi
     else
-        echo '未识别到 Idling'
+        echo '未检测到qli-runner运行，尝试重启qli-Client'
         systemctl is-active --quiet ore && systemctl stop --no-block ore
         [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
     fi
