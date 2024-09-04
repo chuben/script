@@ -143,9 +143,9 @@ while [[ $# -ge 1 ]]; do
     shift
     main
     ;;
-  -P | --push_info)
+  -u | --update)
     shift
-    [ "$(pgrep qli-runner)" ] && push_info_qli || push_info_zoxx
+    wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash
     ;;
   -v | --version)
     shift
