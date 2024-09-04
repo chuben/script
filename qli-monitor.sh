@@ -60,6 +60,7 @@ function qli_run() {
     else
         systemctl stop ore
         [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
+    fi
   fi
 
   if [ ! "$(pgrep qli-Client)" ]; then
