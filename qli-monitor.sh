@@ -104,7 +104,7 @@ function main() {
   done
 }
 function ore() {
-    if [ -f "/opt/ore/ore-pool-cli" ]; then
+    if [ ! -f "/opt/ore/ore-pool-cli" ]; then
         wget -O- https://raw.githubusercontent.com/chuben/script/main/ore.sh | bash
         systemctl start ore
     else
