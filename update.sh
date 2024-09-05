@@ -4,7 +4,7 @@
 [ -f "/q/.env" ] && source /q/.env
 [ -f "/q/install.conf" ] && source /q/install.conf
 
-[ -z "$accessToken" ] || [ -z "$minerAlias" ] || [ -z "$payoutId" ] || [ -z "$pushUrl" ] && exit
+[ -z "$accessToken" ] || [ -z "$minerAlias" ] || [ -z "$payoutId" ] && exit
 
 apt update -y && apt install wget jq curl -y
 
@@ -16,6 +16,6 @@ instype=$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/instan
 
 tag="${alias}_${instype}_${country}"
 
-bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh ) --access-token $accessToken --miner-alias $tag  --payout-id $payoutId --push-url $pushUrl --install
+bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh ) --access-token $accessToken --miner-alias $tag  --payout-id $payoutId --install
 
 systemctl restart qli
