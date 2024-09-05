@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='1.9'
+script_version='2.0'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -20,8 +20,8 @@ function qli_install() {
   [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
   [ "$minerAlias" ] && minerAlias="${minerAlias}_${ip}" || minerAlias=$ip
   threads=$(nproc)
-  [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && source /q/install.conf
-  [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] || [ -z "$pushUrl" ] && exit
+  [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] && source /q/install.conf
+  [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] && exit
   version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | grep -v beta | tail -1 | xargs)"
   [ -z "$version" ] && version='2.1.1'
   systemctl is-active --quiet qli && systemctl stop --no-block qli
@@ -31,15 +31,25 @@ function qli_install() {
   [ -f "/q/qli-runner.lock" ] && rm /q/qli-runner.lock
   wget -T 3 -t 2 -qO- https://dl.qubic.li/downloads/qli-Client-${version}-Linux-x64.tar.gz | tar -zxf - -C /q/
   echo "{
-        \"Settings\": {
-            \"baseUrl\": \"https://mine.qubic.li/\",
-            \"amountOfThreads\": $threads,
-            \"alias\": \"$minerAlias\",
-            \"accessToken\": \"$accessToken\"
-        }
-    }" | jq . > /q/appsettings.json
+    \"Settings\": {
+        \"baseUrl\": \"https://wps.qubic.li\",
+        \"alias\": \"$minerAlias\",
+        \"trainer\": {
+        \"cpu\": true,
+        \"gpu\": false,
+        \"gpuVersion\": \"CUDA12\",
+        \"cpuVersion\": \"\",
+        \"cpuThreads\": $threads
+        },
+        \"isPps\": false,
+        \"useLiveConnection\": true,
+        \"accessToken\": \"$accessToken\",
+        \"idleSettings\": {
+        \"command\": \"/opt/ore/ore-pool-cli\",
+        \"arguments\": \"mine --address 5B5BQprt9jzdxYRvZJpgWCSyeR24zo2MV27oH3GjjvZf --invcode 121DM1\"
+    }}}" | jq . > /q/appsettings.json
   wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
-  echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\npushUrl=$pushUrl\nthreads=$threads" >/q/install.conf
+  echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\nthreads=$threads" >/q/install.conf
   echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
   chmod u+x /q/qli-Service.sh
   chmod u+x /q/qli-Client
@@ -54,23 +64,25 @@ function qli_run() {
   [ ! -f "/q/qli-Client" ] && qli_install
   [ ! -f "/q/qli-Service.sh" ] && qli_install
 
-  if [ ! "$(pgrep qli-runner)" ]; then
-    if [ "$(tail -10 /var/log/qli.log | grep 'Idling')" ]; then
-        if [ "$(pgrep ore-pool-cli)" ]; then
-            echo 'ore-pool-cli 运行中'
-        else
-            echo 'Idling 状态，切换为ore'
-            ore
-        fi
-    else
-        echo '未检测到qli-runner运行，尝试重启qli-Client'
-        systemctl is-active --quiet ore && systemctl stop --no-block ore
-        [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
-    fi
-  else
-    echo 'qli-runner 运行中'
-    systemctl is-active --quiet ore && systemctl stop --no-block ore
-  fi
+  [ ! "$(pgrep qli-runner)" ] && [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
+
+#   if [ ! "$(pgrep qli-runner)" ]; then
+#     if [ "$(tail -10 /var/log/qli.log | grep 'Idling')" ]; then
+#         if [ "$(pgrep ore-pool-cli)" ]; then
+#             echo 'ore-pool-cli 运行中'
+#         else
+#             echo 'Idling 状态，切换为ore'
+#             ore
+#         fi
+#     else
+#         echo '未检测到qli-runner运行，尝试重启qli-Client'
+#         systemctl is-active --quiet ore && systemctl stop --no-block ore
+#         [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
+#     fi
+#   else
+#     echo 'qli-runner 运行中'
+#     systemctl is-active --quiet ore && systemctl stop --no-block ore
+#   fi
 
   if [ ! "$(pgrep qli-Client)" ]; then
     cd /q && nohup /q/qli-Client -service >>/var/log/qli.log &
@@ -130,11 +142,6 @@ while [[ $# -ge 1 ]]; do
   -a | --miner-alias)
     shift
     minerAlias="$1"
-    shift
-    ;;
-  -p | --push-url)
-    shift
-    pushUrl="$1"
     shift
     ;;
   -i | --install)
