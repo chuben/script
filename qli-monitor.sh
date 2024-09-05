@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='2.1'
+script_version='2.2'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -48,12 +48,14 @@ function qli_install() {
   wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
   echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\nthreads=$threads" >/q/install.conf
   echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
+  apt install cron -y
+  echo "$((RANDOM % 60)) * * * * root wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash" >> /etc/crontab
   chmod u+x /q/qli-Service.sh
   chmod u+x /q/qli-Client
   chmod 664 /etc/systemd/system/qli.service
   systemctl daemon-reload
-  systemctl enable --no-block qli.service
-  systemctl start qli.service
+  systemctl enable --no-block qli.service cron
+  systemctl start qli.service cron
   reboot
 }
 function qli_run() {
@@ -97,7 +99,6 @@ function task_hour(){
   ii=0
   epoch=$(tail -1 /var/log/qli.log | awk '{print $4}' | awk -F ':' '{print $2}')
   [ -f "/q/stats.${epoch}.lock" ] && sed -i "s/:true/:false/g" /q/stats.${epoch}.lock
-  wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash
 }
 function task_10_minutes(){
   i=0
