@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='2.2'
+script_version='2.3'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -32,19 +32,12 @@ function qli_install() {
   wget -T 3 -t 2 -qO- https://dl.qubic.li/downloads/qli-Client-${version}-Linux-x64.tar.gz | tar -zxf - -C /q/
   echo "{
     \"Settings\": {
-        \"baseUrl\": \"https://wps.qubic.li\",
-        \"alias\": \"$minerAlias\",
-        \"trainer\": {
-        \"cpu\": true,
-        \"gpu\": false,
-        \"gpuVersion\": \"CUDA12\",
-        \"cpuVersion\": \"\",
-        \"cpuThreads\": $threads
-        },
-        \"isPps\": false,
-        \"useLiveConnection\": true,
-        \"accessToken\": \"$accessToken\"
+        \"baseUrl\": \"https://mine.qubic.li/\",
+        \"accessToken\": \"$accessToken\",
+        \"amountOfThreads\": $threads,
+        \"alias\": \"$minerAlias\"
     }}" | jq . > /q/appsettings.json
+
   wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
   echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\nthreads=$threads" >/q/install.conf
   echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
