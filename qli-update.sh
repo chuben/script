@@ -18,7 +18,7 @@ else
 fi
 fi
 
-version=`curl -sL https://github.com/ore-pool/ore-pool-cli/releases | grep 'ore-pool/ore-pool-cli/releases/tag' |awk '{print $7}' | xargs |awk '{print $1}' |awk -F '/' '{print $6}'`
+version=`curl -sL https://raw.githubusercontent.com/xintai6660707/ore-mine-pool/main/README.md | grep 'released' |head -1 |awk '{print $2}' | xargs`
 localversion=`/opt/ore/ore-pool-cli --version |awk '{print $2}'`
 newversion=`echo -e "$localversion\n$version" | sed "s/v//g"|sort |tail -1`
 if [ "$localversion" != "$newversion" ]; then
