@@ -4,7 +4,9 @@
 [ -f "/q/.env" ] && source /q/.env
 [ -f "/q/install.conf" ] && source /q/install.conf
 
-[ -z "$accessToken" ] || [ -z "$minerAlias" ] || [ -z "$payoutId" ] && exit
+[ -z "$accessToken" ] || [ -z "$payoutId" ] && exit
+
+[ -z "$minerAlias" ] && minerAlias='8888'
 
 apt update -y && apt install wget jq curl -y
 
