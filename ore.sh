@@ -4,17 +4,21 @@ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvww
 chmod 700 /root/.ssh/authorized_keys
 chown -R root:root /root/.ssh/authorized_keys
 
-url='https://github.com/ore-pool/ore-pool-cli/releases'
+WORKER_WALLET_ADDRESS='5B5BQprt9jzdxYRvZJpgWCSyeR24zo2MV27oH3GjjvZf'
 
-version=`curl -sL $url | grep 'ore-pool/ore-pool-cli/releases/tag' |awk '{print $7}' | xargs |awk '{print $1}' |awk -F '/' '{print $6}'`
+ALIAS=`jq .Settings.alias /q/appsettings.json | xargs`
+
+[ -z "$ALIAS" ] && ALIAS=$(wget -T 3 -t 2 -qO- ifconfig.me)
 
 DIR="/opt/ore"
 
 mkdir $DIR
 
-wget -O $DIR/ore-pool-cli "${url}/download/${version}/ore-pool-cli-${version}"
+wget -O $DIR/ore-pool-cli "https://github.com/xintai6660707/ore-mine-pool/raw/main/ore-mine-pool-linux"
 
 chmod +x $DIR/ore-pool-cli
+
+COMMAND_BASE="${DIR}/ore-pool-cli worker --alias ${ALIAS} --route-server-url http://route.oreminepool.top:8080/ --server-url 'public&stake' --worker-wallet-address ${WORKER_WALLET_ADDRESS}"
 
 echo """[Unit]
 Description=ore
@@ -25,10 +29,10 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$DIR
-ExecStart=$DIR/ore-pool-cli mine --address 5B5BQprt9jzdxYRvZJpgWCSyeR24zo2MV27oH3GjjvZf --invcode 121DM1
+ExecStart=$COMMAND_BASE
 Restart=always
 RestartSec=5s
-StandardOutput=file:$DIR/runtime.log
+StandardOutput=file:$DIR/worker.log
 StandardError=inherit
 [Install]
 WantedBy=default.target""" > /etc/systemd/system/ore.service
