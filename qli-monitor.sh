@@ -60,7 +60,8 @@ function qli_run() {
 #   [ ! "$(pgrep qli-runner)" ] && [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
 
   if [ ! "$(pgrep qli-runner)" ]; then
-    if [ "$(tail -10 /var/log/qli.log | grep 'Idling')" ]; then
+    #if [ "$(tail -10 /var/log/qli.log | grep 'Idling')" ]; then
+    if false; then
         if [ "$(pgrep ore-pool-cli)" ]; then
             echo 'ore-pool-cli 运行中'
         else
