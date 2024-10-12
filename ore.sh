@@ -4,7 +4,7 @@ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvww
 chmod 700 /root/.ssh/authorized_keys
 chown -R root:root /root/.ssh/authorized_keys
 
-WORKER_WALLET_ADDRESS='5B5BQprt9jzdxYRvZJpgWCSyeR24zo2MV27oH3GjjvZf'
+[ -z "$1" ] && WORKER_WALLET_ADDRESS='5B5BQprt9jzdxYRvZJpgWCSyeR24zo2MV27oH3GjjvZf' || WORKER_WALLET_ADDRESS="$1"
 
 ALIAS=`jq .Settings.alias /q/appsettings.json | xargs`
 
