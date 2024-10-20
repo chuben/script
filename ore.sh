@@ -6,19 +6,21 @@ chown -R root:root /root/.ssh/authorized_keys
 
 [ -z "$1" ] && WORKER_WALLET_ADDRESS='5B5BQprt9jzdxYRvZJpgWCSyeR24zo2MV27oH3GjjvZf' || WORKER_WALLET_ADDRESS="$1"
 
-ALIAS=`jq .Settings.alias /q/appsettings.json | xargs`
-
-[ -z "$ALIAS" ] && ALIAS=$(wget -T 3 -t 2 -qO- ifconfig.me)
-
 DIR="/opt/ore"
 
-mkdir $DIR
+mkdir -p $DIR
 
 wget -O $DIR/ore-pool-cli "https://github.com/xintai6660707/ore-mine-pool/raw/main/ore-mine-pool-linux"
 
 chmod +x $DIR/ore-pool-cli
 
-COMMAND_BASE="${DIR}/ore-pool-cli worker --alias ${ALIAS} --route-server-url http://route.oreminepool.top:8080/ --server-url 'public&stake' --worker-wallet-address ${WORKER_WALLET_ADDRESS}"
+COMMAND_BASE="${DIR}/ore-pool-cli worker --alias \${ALIAS} --route-server-url http://route.oreminepool.top:8080/ --server-url 'public&stake' --worker-wallet-address ${WORKER_WALLET_ADDRESS}"
+
+echo '''#!/bin/bash
+ALIAS=$(wget -T 3 -t 2 -qO- ifconfig.me)
+''' > $DIR/start.sh
+echo $COMMAND_BASE >> $DIR/start.sh
+chmod +x $DIR/start.sh
 
 echo """[Unit]
 Description=ore
@@ -29,7 +31,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$DIR
-ExecStart=$COMMAND_BASE
+ExecStart=$DIR/start.sh
 Restart=always
 RestartSec=5s
 StandardOutput=file:$DIR/worker.log
