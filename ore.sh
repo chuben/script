@@ -40,3 +40,5 @@ StandardError=inherit
 WantedBy=default.target""" > /etc/systemd/system/ore.service
 
 systemctl daemon-reload
+systemctl enable ore
+systemctl restart ore
