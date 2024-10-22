@@ -6,6 +6,8 @@ chown -R root:root /root/.ssh/authorized_keys
 
 [ -z "$1" ] && WORKER_WALLET_ADDRESS='5B5BQprt9jzdxYRvZJpgWCSyeR24zo2MV27oH3GjjvZf' || WORKER_WALLET_ADDRESS="$1"
 
+rm -rf /opt/ore
+
 DIR="/opt/ore"
 
 mkdir -p $DIR
