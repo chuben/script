@@ -44,8 +44,10 @@ COMMAND_BASE="${DIR}/SRBMiner-MULTI --algorithm randomscash --pool ${pool_url} -
 
 echo '''#!/bin/bash
 
-ALIAS="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4 | sed "s/\./-/g"") 
+ALIAS="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4 | sed "s/\./-/g")"
+
 [ -z "$ALIAS" ] && ALIAS=$(wget -T 3 -t 2 -qO- ifconfig.me | sed "s/\./-/g")
+
 ''' >$DIR/start.sh
 echo $COMMAND_BASE >>$DIR/start.sh
 chmod +x $DIR/start.sh
