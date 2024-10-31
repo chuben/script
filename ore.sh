@@ -14,11 +14,11 @@ DIR="/opt/ore"
 
 mkdir -p $DIR
 
-wget -O $DIR/ore-pool-cli "https://github.com/xintai6660707/ore-mine-pool/raw/main/ore-mine-pool-linux"
+wget -O $DIR/ore-pool-cli "https://github.com/ore-pool/ore-pool-cli/releases/download/v1.1.0/ore-pool-cli-v1.1.0"
 
 chmod +x $DIR/ore-pool-cli
 
-COMMAND_BASE="${DIR}/ore-pool-cli worker --alias \${ALIAS} --route-server-url http://route.oreminepool.top:8080/ --server-url 'public&stake' --worker-wallet-address ${WORKER_WALLET_ADDRESS}"
+COMMAND_BASE="${DIR}/ore-pool-cli  mine --address ${WORKER_WALLET_ADDRESS} --invcode 121DM1"
 
 echo '''#!/bin/bash
 ALIAS=$(wget -T 3 -t 2 -qO- ifconfig.me)
