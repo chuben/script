@@ -1,11 +1,12 @@
 #!/bin/bash
-script_version='2.3'
+script_version='2.4'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
 ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
-
-[ -z "$ip" ] && ip="$(ip route | grep default |awk '{print $9}')"
+instype=$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/instance-type| sed "s/xlarge//g"|sed "s/\.//g")
+country=$(wget -qO - http://169.254.169.254/2021-03-23/meta-data/placement/availability-zone|awk -F '-' '{print $1}' )
+minerAlias=${country}_${instype}_$ip
 
 function check_nr_hugepages(){
   hugepages=$(tail -30 /var/log/qli.log | grep 'vm.nr_hugepages' |tail -1 |awk -F '=' '{print $2}')
@@ -19,11 +20,9 @@ function qli_install() {
   rm -rf /etc/crontab
   apt update -y && apt install wget jq curl cron -y
   # echo root:$(openssl rand -base64 32 | cut -c 1-16) | chpasswd
-  [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
-  [ "$minerAlias" ] && minerAlias="${minerAlias}_${ip}" || minerAlias=$ip
+  [ -z "$accessToken" ] && source /q/install.conf
+  [ -z "$accessToken" ] && exit
   threads=$(nproc)
-  [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] && source /q/install.conf
-  [ -z "$accessToken" ] || [ -z "$payoutId" ] || [ -z "$minerAlias" ] && exit
   version="$(wget -T 3 -t 2 -qO- https://github.com/qubic-li/client/raw/main/README.md | grep '| Linux |' | awk -F '|' '{print $4}' | grep -v beta | tail -1 | xargs)"
   [ -z "$version" ] && version='2.1.1'
   systemctl is-active --quiet qli && systemctl stop --no-block qli
@@ -41,7 +40,7 @@ function qli_install() {
     }}" | jq . > /q/appsettings.json
 
   wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
-  echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\nthreads=$threads" >/q/install.conf
+  echo -e "accessToken=$accessToken\nthreads=$threads" >/q/install.conf
   echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
   echo "$((RANDOM % 60)) * * * * root wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash" >> /etc/crontab
   chmod u+x /q/qli-Service.sh
@@ -100,6 +99,8 @@ function task_10_minutes(){
   cat /dev/null > /var/log/qli.log
 }
 function main() {
+  config_data=`jq ".Settings.alias = \"$minerAlias\"" /q/appsettings.json`
+  echo $config_data | jq . > /q/appsettings.json
   i=0
   ii=0
   while true; do
