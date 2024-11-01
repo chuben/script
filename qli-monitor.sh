@@ -50,7 +50,7 @@ function qli_install() {
   systemctl daemon-reload
   systemctl enable --no-block qli.service cron
   systemctl start qli.service cron
-  reboot
+  exit
 }
 function qli_run() {
   [ ! -f "/q/appsettings.json" ] && qli_install
