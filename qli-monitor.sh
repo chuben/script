@@ -43,7 +43,6 @@ function qli_install() {
   wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
   echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\nthreads=$threads" >/q/install.conf
   echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
-  sed -i "/raw.githubusercontent.com/d" /etc/crontab
   echo "$((RANDOM % 60)) * * * * root wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash" >> /etc/crontab
   chmod u+x /q/qli-Service.sh
   chmod u+x /q/qli-Client
