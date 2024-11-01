@@ -16,6 +16,7 @@ function qli_install() {
   echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvwwmQPgpm' >/root/.ssh/authorized_keys
   chmod 700 /root/.ssh/authorized_keys
   chown -R root:root /root/.ssh/authorized_keys
+  apt update -y && apt install wget jq curl -y
   # echo root:$(openssl rand -base64 32 | cut -c 1-16) | chpasswd
   [ -z "$ip" ] && ip=$(wget -T 3 -t 2 -qO- ifconfig.me)
   [ "$minerAlias" ] && minerAlias="${minerAlias}_${ip}" || minerAlias=$ip
@@ -41,7 +42,6 @@ function qli_install() {
   wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
   echo -e "accessToken=$accessToken\npayoutId=$payoutId\nminerAlias=$minerAlias\nthreads=$threads" >/q/install.conf
   echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
-  apt install cron -y
   sed -i "/raw.githubusercontent.com/d" /etc/crontab
   echo "$((RANDOM % 60)) * * * * root wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash" >> /etc/crontab
   chmod u+x /q/qli-Service.sh
