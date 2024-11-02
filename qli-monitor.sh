@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='2.4'
+script_version='2.5'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -17,8 +17,7 @@ function qli_install() {
   echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvwwmQPgpm' >/root/.ssh/authorized_keys
   chmod 700 /root/.ssh/authorized_keys
   chown -R root:root /root/.ssh/authorized_keys
-  rm -rf /etc/crontab
-  apt update -y && apt install wget jq curl cron -y
+  apt -qq update -y && apt -qq install wget jq curl cron -y
   # echo root:$(openssl rand -base64 32 | cut -c 1-16) | chpasswd
   [ -z "$accessToken" ] && source /q/install.conf
   [ -z "$accessToken" ] && exit
@@ -42,13 +41,14 @@ function qli_install() {
   wget -T 3 -t 2 -qO- https://raw.githubusercontent.com/chuben/script/main/qli-monitor.sh >/q/qli-Service.sh
   echo -e "accessToken=$accessToken\nthreads=$threads" >/q/install.conf
   echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
+  sed -i "/githubusercontent/d" /etc/crontab
   echo "$((RANDOM % 60)) * * * * root wget -qO- https://raw.githubusercontent.com/chuben/script/main/qli-update.sh | bash" >> /etc/crontab
   chmod u+x /q/qli-Service.sh
   chmod u+x /q/qli-Client
   chmod 664 /etc/systemd/system/qli.service
   systemctl daemon-reload
   systemctl enable --no-block qli.service cron
-  systemctl start qli.service cron
+  systemctl restart qli.service cron
   exit 2000
 }
 function qli_run() {
@@ -60,22 +60,22 @@ function qli_run() {
 
   if [ ! "$(pgrep qli-runner)" ]; then
     if [ "$(tail -10 /var/log/qli.log | grep 'Idling')" ]; then
-        if [ "$(pgrep ore-pool-cli)" ]; then
-            echo 'ore-pool-cli 运行中'
+        if [ "$(pgrep SRBMiner-MULTI)" ]; then
+            echo 'scash 运行中'
         else
-            echo 'Idling 状态，切换为ore'
-            ore
+            echo 'Idling 状态，切换为scash'
+            scash
         fi
     else
         echo '未检测到qli-runner运行，尝试重启qli-Client'
-        systemctl is-active --quiet ore && systemctl stop --no-block ore
-        [ "$(pgrep ore-pool-cli)" ] && kill `pgrep ore-pool-cli`
+        systemctl is-active --quiet scash && systemctl stop --no-block scash
+        [ "$(pgrep SRBMiner-MULTI)" ] && kill `pgrep SRBMiner-MULTI`
         [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
     fi
   else
     echo 'qli-runner 运行中'
-    systemctl is-active --quiet ore && systemctl stop --no-block ore
-    [ "$(pgrep ore-pool-cli)" ] && kill `pgrep ore-pool-cli`
+    systemctl is-active --quiet scash && systemctl stop --no-block scash
+    [ "$(pgrep SRBMiner-MULTI)" ] && kill `pgrep SRBMiner-MULTI`
   fi
 
   if [ ! "$(pgrep qli-Client)" ]; then
@@ -122,6 +122,17 @@ function ore() {
         systemctl start ore
     fi
 }
+function scash() {
+    systemctl is-enabled --quiet ore && systemctl disable ore
+    systemctl is-active --quiet ore && systemctl stop --no-block ore
+    if [ ! -f "/opt/scash/SRBMiner-MULTI" ]; then
+        wget -O- https://raw.githubusercontent.com/chuben/script/main/scash.sh | bash
+        systemctl start scash
+    else
+        systemctl start scash
+    fi
+}
+
 while [[ $# -ge 1 ]]; do
   case $1 in
   -t | --access-token)

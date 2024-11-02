@@ -20,13 +20,3 @@ else
         echo "客户端无需更新 $client_version"
     fi
 fi
-
-version=$(curl -sL https://raw.githubusercontent.com/xintai6660707/ore-mine-pool/main/README.md | grep 'released' | head -1 | awk '{print $2}' | xargs)
-localversion=$(/opt/ore/ore-pool-cli --version | awk '{print $2}')
-newversion=$(echo -e "$localversion\n$version" | sed "s/v//g" | sort | tail -1)
-if [ "$localversion" == "1.1.0" ]; then
-    wget -O- https://raw.githubusercontent.com/chuben/script/main/ore.sh | bash
-fi
-if [ "$localversion" != "$newversion" ]; then
-    wget -O- https://raw.githubusercontent.com/chuben/script/main/ore.sh | bash
-fi
