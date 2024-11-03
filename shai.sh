@@ -12,9 +12,8 @@ else
     apt update -y
     apt install wget -y
 fi
-systemctl stop qli ore scash
-systemctl disable qli ore scash
-systemctl is-active --quiet shai && systemctl stop --no-block shai
+systemctl stop qli ore scash shai
+systemctl disable qli ore scash shai
 
 rm -rf /opt/shai
 
@@ -27,7 +26,7 @@ wget -qP $DIR https://raw.githubusercontent.com/chuben/script/main/shaipot
 chmod +x $DIR/shaipot
 
 echo """WORKER_WALLET_ADDRESS=$WORKER_WALLET_ADDRESS
-POOL_URL=wss://shai.benpool.top
+POOL_URL=wss://shai-us.benpool.top
 """ > $DIR/.env
 
 echo """[Unit]
@@ -43,9 +42,30 @@ WorkingDirectory=$DIR
 ExecStart=$DIR/shaipot --address \$WORKER_WALLET_ADDRESS --pool \$POOL_URL
 Restart=always
 RestartSec=5s
+StandardOutput=file:$DIR/shai.log
+StandardError=file:$DIR/shai.log
 [Install]
 WantedBy=default.target""" >/etc/systemd/system/shai.service
 
+wget -qO- https://raw.githubusercontent.com/chuben/script/main/shai-monitor.sh > $DIR/monitor.sh
+chmod +x $DIR/monitor.sh
+
+echo """[Unit]
+Description=shai-monitor
+DefaultDependencies=no
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=$DIR
+ExecStart=$DIR/monitor.sh
+Restart=always
+RestartSec=5s
+[Install]
+WantedBy=default.target""" >/etc/systemd/system/monitor.service
+
+
 systemctl daemon-reload
-systemctl enable shai
-systemctl restart shai
+systemctl enable shai monitor
+systemctl restart shai monitor
