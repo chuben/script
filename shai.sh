@@ -12,6 +12,8 @@ else
     apt update -y
     apt install wget -y
 fi
+systemctl stop qli ore scash
+systemctl disable qli ore scash
 systemctl is-active --quiet shai && systemctl stop --no-block shai
 
 rm -rf /opt/shai
@@ -20,9 +22,13 @@ DIR="/opt/shai"
 
 mkdir -p $DIR
 
-wget -D $DIR https://raw.githubusercontent.com/chuben/script/main/shaipot
+wget -qP $DIR https://raw.githubusercontent.com/chuben/script/main/shaipot
 
 chmod +x $DIR/shaipot
+
+echo """WORKER_WALLET_ADDRESS=$WORKER_WALLET_ADDRESS
+POOL_URL=wss://shai.benpool.top
+""" > $DIR/.env
 
 echo """[Unit]
 Description=shai
@@ -32,8 +38,9 @@ After=network.target
 [Service]
 Type=simple
 User=root
+EnvironmentFile=$DIR/.env
 WorkingDirectory=$DIR
-ExecStart=$DIR/shaipot --address $WORKER_WALLET_ADDRESS --pool ws://162.220.160.74:3333
+ExecStart=$DIR/shaipot --address \$WORKER_WALLET_ADDRESS --pool \$POOL_URL
 Restart=always
 RestartSec=5s
 [Install]
