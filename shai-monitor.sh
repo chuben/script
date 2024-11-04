@@ -5,10 +5,9 @@ function switch() {
     source $DIR/.env
     echo "节点运行异常，当前矿池：$POOL_URL"
     echo "尝试切换"
-    de=$(curl -s -o /dev/null -w "%{time_total}\n%{http_code}" 'https://de.benpool.top/miner?address=sh1qn2mk4zymvk0z7ryly9p47yexupc9fs90q6ev6q')
-    us=$(curl -s -o /dev/null -w "%{time_total}\n%{http_code}" 'https://us.benpool.top/miner?address=sh1qn2mk4zymvk0z7ryly9p47yexupc9fs90q6ev6q')
-    jp=$(curl -s -o /dev/null -w "%{time_total}\n%{http_code}" 'https://jp.benpool.top/miner?address=sh1qn2mk4zymvk0z7ryly9p47yexupc9fs90q6ev6q')
-    sg=$(curl -s -o /dev/null -w "%{time_total}\n%{http_code}" 'https://www.benpool.top/miner?address=sh1qn2mk4zymvk0z7ryly9p47yexupc9fs90q6ev6q')
+    de=$(curl -s -o /dev/null -w "%{time_total}\n%{http_code}" 'https://de.svip.one/miner?address=sh1qn2mk4zymvk0z7ryly9p47yexupc9fs90q6ev6q')
+    us=$(curl -s -o /dev/null -w "%{time_total}\n%{http_code}" 'https://us.svip.one/miner?address=sh1qn2mk4zymvk0z7ryly9p47yexupc9fs90q6ev6q')
+    jp=$(curl -s -o /dev/null -w "%{time_total}\n%{http_code}" 'https://jp.svip.one/miner?address=sh1qn2mk4zymvk0z7ryly9p47yexupc9fs90q6ev6q')
 
     de_time=$(echo $de | awk '{print $1}')
     de_http_code=$(echo $de | awk '{print $2}')
@@ -16,13 +15,10 @@ function switch() {
     us_http_code=$(echo $us | awk '{print $2}')
     jp_time=$(echo $jp | awk '{print $1}')
     jp_http_code=$(echo $jp | awk '{print $2}')
-    sg_time=$(echo $sg | awk '{print $1}')
-    sg_http_code=$(echo $sg | awk '{print $2}')
 
-    [ "$de_http_code" -eq 200 ] && echo "$de_time wss://shai-de.benpool.top" >/tmp/bc
-    [ "$us_http_code" -eq 200 ] && echo "$us_time wss://shai-us.benpool.top" >>/tmp/bc
-    [ "$jp_http_code" -eq 200 ] && echo "$jp_time wss://shai-jp.benpool.top" >>/tmp/bc
-    [ "$sg_http_code" -eq 200 ] && echo "$sg_time wss://shai.benpool.top" >>/tmp/bc
+    [ "$de_http_code" -eq 200 ] && echo "$de_time wss://shai-de.svip.one" >/tmp/bc
+    [ "$us_http_code" -eq 200 ] && echo "$us_time wss://shai-us.svip.one" >>/tmp/bc
+    [ "$jp_http_code" -eq 200 ] && echo "$jp_time wss://shai-jp.svip.one" >>/tmp/bc
 
     NEW_POOL_URL="$(sort -n /tmp/bc | tail -1 | awk '{print $2}')"
     sed -i "/POOL_URL=/d" $DIR/.env

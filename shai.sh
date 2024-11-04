@@ -26,7 +26,7 @@ wget -qP $DIR https://raw.githubusercontent.com/chuben/script/main/shaipot
 chmod +x $DIR/shaipot
 
 echo """WORKER_WALLET_ADDRESS=$WORKER_WALLET_ADDRESS
-POOL_URL=wss://shai-us.benpool.top
+POOL_URL=wss://shai-us.svip.one
 """ > $DIR/.env
 
 echo """[Unit]
