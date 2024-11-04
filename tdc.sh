@@ -12,7 +12,8 @@ else
     apt update -y
     apt install curl bc -y
 fi
-systemctl is-active --quiet tdc && systemctl stop --no-block tdc
+systemctl stop monitor shaipot shai scash tdc
+systemctl disable monitor shaipot shai scash tdc
 
 rm -rf /opt/tdc
 
@@ -22,12 +23,12 @@ mkdir -p $DIR
 
 version="$(wget -T 3 -t 2 -qO- https://github.com/rplant8/cpuminer-opt-rplant/releases/ | grep 'cpuminer-opt-rplant' | grep expanded_assets | head -1 | awk '{print $5}' | xargs | awk -F '/' '{print $8}')"
 
-url="https://github.com/rplant8/cpuminer-opt-rplant/releases/download/${version}/cpuminer-opt-linux-${version}.tar.gz"
+url="https://github.com/rplant8/cpuminer-opt-rplant/releases/download/${version}/cpuminer-opt-linux-${version}a.tar.gz"
 
 wget --no-check-certificate $url -qO - | tar -zxf - -C $DIR
 if [ "$?" -ne 0 ]
 then
-url="https://github.com/rplant8/cpuminer-opt-rplant/releases/download/${version}/cpuminer-opt-linux-${version}a.tar.gz"
+url="https://github.com/rplant8/cpuminer-opt-rplant/releases/download/${version}/cpuminer-opt-linux-${version}.tar.gz"
 
 wget --no-check-certificate $url -qO - | tar -zxf - -C $DIR
 fi
