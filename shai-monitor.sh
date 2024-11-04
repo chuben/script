@@ -25,7 +25,9 @@ function switch() {
         fi
     fi
 
-    if [ "$NEW_POOL_URL" ]; then
+    if [ "$NEW_POOL_URL" == "$POOL_URL" ]; then
+        echo "无需切换"
+    elif [ "$NEW_POOL_URL" ]; then
         sed -i "/POOL_URL=/d" $DIR/.env
         echo "POOL_URL=$NEW_POOL_URL" >>$DIR/.env
         systemctl restart shai
