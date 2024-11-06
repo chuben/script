@@ -14,11 +14,11 @@ DIR="/opt/ore"
 
 mkdir -p $DIR
 
-wget -O $DIR/ore-pool-cli "https://github.com/ore-pool/ore-pool-cli/releases/download/v1.1.0/ore-pool-cli-v1.1.0"
+wget -O $DIR/mine-linux "https://github.com/Beepool-xyz/bee-ore-pool/raw/refs/heads/master/mine-linux"
 
-chmod +x $DIR/ore-pool-cli
+chmod +x $DIR/mine-linux
 
-COMMAND_BASE="${DIR}/ore-pool-cli  mine --address ${WORKER_WALLET_ADDRESS} --invcode 121DM1"
+COMMAND_BASE="${DIR}/mine-linux --url=http://orepool.xyz:8080 --address=$WORKER_WALLET_ADDRESS --worker-name=\$ALIAS" 
 
 echo '''#!/bin/bash
 ALIAS=$(wget -T 3 -t 2 -qO- ifconfig.me)
