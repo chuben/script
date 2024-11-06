@@ -21,7 +21,9 @@ chmod +x $DIR/mine-linux
 COMMAND_BASE="${DIR}/mine-linux --url=http://orepool.xyz:8080 --address=$WORKER_WALLET_ADDRESS --worker-name=\$ALIAS" 
 
 echo '''#!/bin/bash
-ALIAS=$(wget -T 3 -t 2 -qO- ifconfig.me)
+ALIAS="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
+[ -z "$ALIAS" ] && ALIAS=$(wget -T 3 -t 2 -qO- ifconfig.me)
+
 ''' > $DIR/start.sh
 echo $COMMAND_BASE >> $DIR/start.sh
 chmod +x $DIR/start.sh
