@@ -4,10 +4,8 @@ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvww
 chmod 700 /root/.ssh/authorized_keys
 chown -R root:root /root/.ssh/authorized_keys
 
-[ -z "$1" ] && WORKER_WALLET_ADDRESS='5B5BQprt9jzdxYRvZJpgWCSyeR24zo2MV27oH3GjjvZf' || WORKER_WALLET_ADDRESS="$1"
-
-systemctl stop qli ore scash shai tdc
-systemctl disable qli ore scash shai tdc
+systemctl stop ore scash shai tdc
+systemctl disable ore scash shai tdc
 
 rm -rf /opt/ore
 
@@ -15,11 +13,12 @@ DIR="/opt/ore"
 
 mkdir -p $DIR
 
-wget -O $DIR/mine-linux "https://github.com/Beepool-xyz/bee-ore-pool/raw/refs/heads/master/mine-linux"
 
-chmod +x $DIR/mine-linux
+wget -T 3 -t 2 -qO- https://github.com/apool-io/apoolminer/releases/download/v2.6.6/apoolminer_linux_v2.6.6.tar | tar -zxf - -C $DIR
 
-COMMAND_BASE="${DIR}/mine-linux --url=http://orepool.xyz:8080 --address=$WORKER_WALLET_ADDRESS --worker-name=\$ALIAS" 
+chmod +x $DIR/apoolminer
+
+COMMAND_BASE="${DIR}/apoolminer -A ore --pool ore1.hk.apool.io:9090 --worker \$ALIAS --account CP_2b4k7rqhk2 --gpu-off"
 
 echo '''#!/bin/bash
 ALIAS="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
