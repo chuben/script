@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='2.5'
+script_version='2.6'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -64,22 +64,22 @@ function qli_run() {
 
   if [ ! "$(pgrep qli-runner)" ]; then
     if [ "$(tail -10 /var/log/qli.log | grep 'Idling')" ]; then
-        if [ "$(pgrep SRBMiner-MULTI)" ]; then
-            echo 'scash 运行中'
+        if [ "$(pgrep apoolminer)" ]; then
+            echo 'ore 运行中'
         else
-            echo 'Idling 状态，切换为scash'
-            scash
+            echo 'Idling 状态，切换为ore'
+            ore
         fi
     else
         echo '未检测到qli-runner运行，尝试重启qli-Client'
-        systemctl is-active --quiet scash && systemctl stop --no-block scash
-        [ "$(pgrep SRBMiner-MULTI)" ] && kill `pgrep SRBMiner-MULTI`
+        systemctl is-active --quiet ore && systemctl stop --no-block ore
+        [ "$(pgrep apoolminer)" ] && kill `pgrep apoolminer`
         [ "$(pgrep qli-Client)" ] && kill $(pgrep qli-Client)
     fi
   else
     echo 'qli-runner 运行中'
-    systemctl is-active --quiet scash && systemctl stop --no-block scash
-    [ "$(pgrep SRBMiner-MULTI)" ] && kill `pgrep SRBMiner-MULTI`
+    systemctl is-active --quiet ore && systemctl stop --no-block ore
+    [ "$(pgrep apoolminer)" ] && kill `pgrep apoolminer`
   fi
 
   if [ ! "$(pgrep qli-Client)" ]; then
