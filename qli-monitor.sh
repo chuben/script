@@ -32,8 +32,7 @@ function qli_install() {
   [ -f "/q/qli-runner.lock" ] && rm /q/qli-runner.lock
   wget -T 3 -t 2 -qO- https://dl.qubic.li/downloads/qli-Client-${version}-Linux-x64.tar.gz | tar -zxf - -C /q/
   echo "{
-    \"Settings\": {
-        \"baseUrl\": \"https://mine.qubic.li/\",
+    \"ClientSettings\": {
         \"accessToken\": \"$accessToken\",
         \"amountOfThreads\": $threads,
         \"alias\": \"$minerAlias\"
