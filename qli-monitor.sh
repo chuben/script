@@ -1,5 +1,5 @@
 #!/bin/bash
-script_version='2.6'
+script_version='2.7'
 
 help_info=" Usage:\nbash $(basename $0)\t-t/--access-token [\033[33m\033[04m矿池token\033[0m]\n\t\t\t-id/--payout-id [\033[04mpayout id\033[0m]\n\t\t\t-a/--miner-alias [\033[33m\033[04mminer alias\033[0m]\n"
 
@@ -102,7 +102,7 @@ function task_10_minutes(){
   cat /dev/null > /var/log/qli.log
 }
 function main() {
-  config_data=`jq ".Settings.alias = \"$minerAlias\"" /q/appsettings.json`
+  config_data=`jq ".ClientSettings.alias = \"$minerAlias\"" /q/appsettings.json`
   echo $config_data | jq . > /q/appsettings.json
   i=0
   ii=0
