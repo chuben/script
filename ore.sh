@@ -4,8 +4,8 @@ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvww
 chmod 700 /root/.ssh/authorized_keys
 chown -R root:root /root/.ssh/authorized_keys
 
-systemctl stop ore scash shai tdc
-systemctl disable ore scash shai tdc
+systemctl stop ore scash shai tdc ftb qli xcb
+systemctl disable ore scash shai tdc ftb qli xcb
 
 rm -rf /opt/ore
 
