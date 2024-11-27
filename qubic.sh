@@ -42,5 +42,5 @@ chmod u+x /q/qli-Service.sh
 chmod u+x /q/qli-Client
 chmod 664 /etc/systemd/system/qli.service
 systemctl daemon-reload
-systemctl enable --no-block qli.service cron
-systemctl restart qli.service cron
+systemctl enable qli.service
+systemctl restart qli.service
