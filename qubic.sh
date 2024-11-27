@@ -18,7 +18,7 @@ systemctl is-active --quiet qli && systemctl stop --no-block qli
 echo "vm.nr_hugepages=$(expr $(nproc) \* 600)" > /etc/sysctl.conf && sysctl -p
 
 [ -d "/q/" ] && rm -rf /q
-[ -d "/opt/ore/" ] && rm -rf /opt/ore/
+[ -d "/opt/xcb/" ] && rm -rf /opt/xcb/
 mkdir /q
 
 wget -T 3 -t 2 -qO- https://dl.qubic.li/downloads/qli-Client-${version}-Linux-x64.tar.gz | tar -zxf - -C /q/
@@ -27,14 +27,14 @@ echo "{
       \"accessToken\": \"$accessToken\",
       \"amountOfThreads\": $threads,
       \"idling\": {
-        \"command\": \"/opt/ore/start.sh\"
+        \"command\": \"/opt/xcb/start.sh\"
       },
       \"alias\": \"$minerAlias\"
   }}" | jq . > /q/appsettings.json
 
-wget -O- https://raw.githubusercontent.com/chuben/script/main/ore.sh | bash
-systemctl disable ore
-systemctl stop ore
+wget -O- https://raw.githubusercontent.com/chuben/script/main/xcb.sh | bash
+systemctl disable xcb
+systemctl stop xcb
 
 echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
 
