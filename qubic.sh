@@ -26,7 +26,6 @@ echo "{
   \"ClientSettings\": {
       \"accessToken\": \"$accessToken\",
       \"amountOfThreads\": $threads,
-      \"pps\": false,
       \"idling\": {
         \"command\": \"/opt/xcb/start.sh\"
       },
