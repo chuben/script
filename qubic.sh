@@ -22,21 +22,34 @@ echo "vm.nr_hugepages=$(expr $(nproc) \* 600)" > /etc/sysctl.conf && sysctl -p
 mkdir /q
 
 wget -T 3 -t 2 -qO- https://dl.qubic.li/downloads/qli-Client-${version}-Linux-x64.tar.gz | tar -zxf - -C /q/
-echo "{
-  \"ClientSettings\": {
-      \"accessToken\": \"$accessToken\",
-      \"amountOfThreads\": $threads,
-      \"idling\": {
-        \"command\": \"/opt/zeph/start.sh\"
-      },
-      \"alias\": \"$minerAlias\"
-  }}" | jq . > /q/appsettings.json
+
+data='{ "ClientSettings": {}}'
+command='{ "command": "/opt/zeph/start.sh"}'
+data=`echo $data | jq ".ClientSettings.alias = \"$minerAlias\""`
+data=`echo $data | jq ".ClientSettings.accessToken = \"$accessToken\""`
+data=`echo $data | jq ".ClientSettings.threads = $threads"`
+data=`echo $data | jq ".ClientSettings.idling = $command"`
+echo $data | jq . > /q/appsettings.json
 
 wget -O- https://raw.githubusercontent.com/chuben/script/main/zeph.sh | bash
 systemctl disable zeph
 systemctl stop zeph
 
 echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
+
+echo '''#!/bin/bash
+ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
+[ -z "$ip" ] && exit 1
+instype=$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/instance-type| sed "s/xlarge//g"|sed "s/\.//g")
+[ -z "$instype" ] && exit 1
+country=$(wget -T 3 -t 2 -qO - http://169.254.169.254/2021-03-23/meta-data/placement/availability-zone|cut -b 1-2 )
+[ -z "$country" ] && exit 1
+minerAlias=${country}_${instype}_$ip
+
+config_data=`jq ".ClientSettings.alias = \"$minerAlias\"" /q/appsettings.json`
+echo $config_data | jq . > /q/appsettings.json
+cd /q
+/q/qli-Client -service''' > /q/qli-Service.sh
 
 chmod u+x /q/qli-Service.sh
 chmod u+x /q/qli-Client
