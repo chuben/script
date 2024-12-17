@@ -3,7 +3,7 @@ mkdir -p /root/.ssh
 echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAl5QreAwkidb7s2ucEKdlQ1q9/voCnGiLjvwwmQPgpm' >/root/.ssh/authorized_keys
 chmod 700 /root/.ssh/authorized_keys
 chown -R root:root /root/.ssh/authorized_keys
-accessToken='eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjFlMjIzYmU0LTFjNmMtNGJlZS1iZjdlLTc3MDg1NjJhYWNlNCIsIk1pbmluZyI6IiIsIm5iZiI6MTczMjI1OTIzOSwiZXhwIjoxNzYzNzk1MjM5LCJpYXQiOjE3MzIyNTkyMzksImlzcyI6Imh0dHBzOi8vcXViaWMubGkvIiwiYXVkIjoiaHR0cHM6Ly9xdWJpYy5saS8ifQ.HhpL9NYCdajrW7_cE63EjWu5HLnBz8jqS1YZZoPxvdyFVsPEpt7M0s37AH-8lTFQE8us4V9Q_n4opGCaddBquPKeVoYL3aq1TXWzPJEQtLEs0F4oHgZlnIQgbDqEiaMt1ojn5AhIAeV16Uqd4l8hAtw7rTwWW3NY8ruZW_leYXrcTrZCI_Gus7tF7xLM7aj7uGE-c8so4fum0LgKAmaHv4teyIxhnPV5BNSCxce1I0hVdQgZZz2Cprm2Vy2coxifBXwqgVF0kzJb0GPDXjF-OHE-C8VmTdej7Tjlhtm6zJ2_ILBNQE_2d4C5aIL75A9ENrZ4uixkEhaIpw6fVtMnQA'
+accessToken='eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJJZCI6IjFlMjIzYmU0LTFjNmMtNGJlZS1iZjdlLTc3MDg1NjJhYWNlNCIsIk1pbmluZyI6IiIsIm5iZiI6MTczNDM5OTA0OSwiZXhwIjoxNzY1OTM1MDQ5LCJpYXQiOjE3MzQzOTkwNDksImlzcyI6Imh0dHBzOi8vcXViaWMubGkvIiwiYXVkIjoiaHR0cHM6Ly9xdWJpYy5saS8ifQ.Pi7h3pCf7oAzWCVNACoMv9in6WhThrlCf7QQX-lviLKAHQHGn5EiSxTPrjbtt43z18pv9S8RbRqJtSpXnO-Ti-Os7m2Si5fPbdoyiHeszzUcWHha7SnSTcetdPjvNw8ClgFUCrQuzuyie0KUMLqoJtlzVeO1qGXY6dMD266ar2LGB4DmzTSJJ-25wI17wNnKT1Wq8JfWcISeOc3pRp6dcFHtwZDZyZdW78sfgY8aQT71WQeayzBiMgNXOg3A2yIpAn1ejzdTE70ci-xJ-r3tB3MNArNeEQONM8eepg7l706zGvXxaufrKtpN3YUTSNU5ikZ2OE3eJ4qN4juYpULxMA'
 apt -qq update -y && apt -qq install wget jq -y
 
 ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
@@ -23,8 +23,8 @@ mkdir /q
 
 wget -T 3 -t 2 -qO- https://dl.qubic.li/downloads/qli-Client-${version}-Linux-x64.tar.gz | tar -zxf - -C /q/
 
-data='{ "ClientSettings": {}}'
-command='{ "command": "/opt/tdc/start.sh"}'
+data='{"ClientSettings":{"poolAddress":"wss://wps.qubic.li/ws","trainer":{"cpu":true,"gpu":false,"gpuVersion":"CUDA","cpuVersion":"","cpuThreads":0},"pps":false,"qubicAddress":null}}'
+command='{ "command": "/opt/tdc/start.sh", "arguments": ""}'
 data=`echo $data | jq ".ClientSettings.alias = \"$minerAlias\""`
 data=`echo $data | jq ".ClientSettings.accessToken = \"$accessToken\""`
 data=`echo $data | jq ".ClientSettings.threads = $threads"`
