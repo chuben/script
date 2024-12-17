@@ -18,22 +18,22 @@ systemctl is-active --quiet qli && systemctl stop --no-block qli
 echo "vm.nr_hugepages=$(expr $(nproc) \* 600)" > /etc/sysctl.conf && sysctl -p
 
 [ -d "/q/" ] && rm -rf /q
-[ -d "/opt/tdc/" ] && rm -rf /opt/tdc/
+[ -d "/opt/scash/" ] && rm -rf /opt/scash/
 mkdir /q
 
 wget -T 3 -t 2 -qO- https://dl.qubic.li/downloads/qli-Client-${version}-Linux-x64.tar.gz | tar -zxf - -C /q/
 
 data='{"ClientSettings":{"poolAddress":"wss://wps.qubic.li/ws","trainer":{"cpu":true,"gpu":false,"gpuVersion":"CUDA","cpuVersion":"","cpuThreads":0},"pps":false,"qubicAddress":null}}'
-command='{ "command": "/opt/tdc/start.sh", "arguments": ""}'
+command='{ "command": "/opt/scash/start.sh", "arguments": ""}'
 data=`echo $data | jq ".ClientSettings.alias = \"$minerAlias\""`
 data=`echo $data | jq ".ClientSettings.accessToken = \"$accessToken\""`
 data=`echo $data | jq ".ClientSettings.threads = $threads"`
 data=`echo $data | jq ".ClientSettings.idling = $command"`
 echo $data | jq . > /q/appsettings.json
 
-wget -O- https://raw.githubusercontent.com/chuben/script/main/tdc.sh | bash
-systemctl disable tdc
-systemctl stop tdc
+wget -O- https://raw.githubusercontent.com/chuben/script/main/scash.sh | bash
+systemctl disable scash
+systemctl stop scash
 
 echo -e "[Unit]\nAfter=network-online.target\n[Service]\nExecStart=/bin/bash /q/qli-Service.sh -s\nRestart=always\nRestartSec=1s\n[Install]\nWantedBy=default.target" >/etc/systemd/system/qli.service
 
