@@ -23,7 +23,7 @@ mkdir /q
 
 wget -T 3 -t 2 -qO- https://dl.qubic.li/downloads/qli-Client-${version}-Linux-x64.tar.gz | tar -zxf - -C /q/
 
-data='{"ClientSettings":{"poolAddress":"wss://wps.qubic.li/ws","trainer":{"cpu":true,"gpu":false,"gpuVersion":"CUDA","cpuVersion":"","cpuThreads":0},"pps":false,"qubicAddress":null}}'
+data='{"ClientSettings":{"poolAddress":"wss://wps.qubic.li/ws","trainer":{"cpu":true,"gpu":false,"gpuVersion":"CUDA","cpuVersion":"","cpuThreads":0},"pps":true,"qubicAddress":null}}'
 command='{ "command": "/opt/scash/start.sh", "arguments": ""}'
 data=`echo $data | jq ".ClientSettings.alias = \"$minerAlias\""`
 data=`echo $data | jq ".ClientSettings.accessToken = \"$accessToken\""`
