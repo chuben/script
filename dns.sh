@@ -56,6 +56,8 @@ server:
     auto-trust-anchor-file: "/var/lib/unbound/root.key"
 EOF
 
+systemctl disable systemd-resolved
+systemctl stop systemd-resolved
 # 启用并启动 Unbound 服务
 systemctl enable unbound
 systemctl start unbound
