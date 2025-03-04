@@ -62,8 +62,5 @@ systemctl stop systemd-resolved
 systemctl enable unbound
 systemctl start unbound
 
-# 检查 Unbound 服务状态
-systemctl status unbound
-
 echo 'nameserver 127.0.0.1' >> /etc/resolv.conf
 echo "Unbound 已成功安装并配置为严格递归查询且无缓存的 DNS 服务器。"
