@@ -6,7 +6,7 @@ echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debcon
 
 apt update -y
 version=`uname -r|awk -F '-cloud-' '{print $1}'`
-apt install linux-headers-$version-amd64 linux-image-$version-amd64 certbot python3-pip ppp iptables-persistent netfilter-persistent  net-tools curl -y
+apt install linux-headers-$version-amd64 linux-image-$version-amd64 python3-pip ppp iptables-persistent netfilter-persistent  net-tools curl -y
 
 [ "$?" -eq 0 ] && rm -rf /boot/*cloud*
 
