@@ -54,7 +54,7 @@ WantedBy=multi-user.target''' > /etc/systemd/system/sstp.service
 wget  -T 3 -t 2 -qO-  https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.107.57/AdGuardHome_linux_386.tar.gz | tar -zxf - -C /opt/ 
 chmod +x /opt/AdGuardHome/AdGuardHome
 
-nano /opt/AdGuardHome/AdGuardHome.yaml
+mv /opt/AdGuardHome.yaml /opt/AdGuardHome/.
 
 echo '''[Unit]
 Description=AdGuardHome
