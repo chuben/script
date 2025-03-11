@@ -46,6 +46,6 @@ cache_dir ufs /var/spool/squid 100 16 256
 coredump_dir /var/spool/squid
 EOF
 
-systemctl restart squid
+systemctl restart squid cloudflared
 
-systemctl enable squid
+systemctl enable squid cloudflared
