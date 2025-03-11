@@ -5,28 +5,16 @@ chmod +x cloudflared-linux-amd64
 mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
 mkdir /etc/cloudflared
 
-echo '
+dns=("https://1.1.1.1/dns-query" "https://1.0.0.1/dns-query" "https://dns.google/dns-query" "https://cloudflare-dns.com/dns-query" "https://dns.cloudflare.com/dns-query" "https://dns.quad9.net/dns-query" "https://dns9.quad9.net/dns-query" "https://doh.dns.sb/dns-query" "https://doh.sb/dns-query" "https://dns.sb/dns-query" "https://doh.opendns.com/dns-query" "https://dns.opendns.com/dns-query" "https://doh.umbrella.com/dns-query" "https://dns.umbrella.com/dns-query" "https://dns.sse.cisco.com/dns-query" "https://familyshield.opendns.com/dns-query" "https://doh.familyshield.opendns.com/dns-query" "https://familyshield.sse.cisco.com/dns-query" )
+index1=$((RANDOM % 18))
+index2=$((RANDOM % 18))
+
+echo "
 proxy-dns: true
 proxy-dns-upstream:
-  - https://1.1.1.1/dns-query
-  - https://1.0.0.1/dns-query
-  - https://dns.google/dns-query
-  - https://cloudflare-dns.com/dns-query
-  - https://dns.cloudflare.com/dns-query
-  - https://dns.quad9.net/dns-query
-  - https://dns9.quad9.net/dns-query
-  - https://doh.dns.sb/dns-query
-  - https://doh.sb/dns-query
-  - https://dns.sb/dns-query
-  - https://doh.opendns.com/dns-query
-  - https://dns.opendns.com/dns-query
-  - https://doh.umbrella.com/dns-query
-  - https://dns.umbrella.com/dns-query
-  - https://dns.sse.cisco.com/dns-query
-  - https://familyshield.opendns.com/dns-query
-  - https://doh.familyshield.opendns.com/dns-query
-  - https://familyshield.sse.cisco.com/dns-query
-'> /etc/cloudflared/config.yml
+  - ${dns[$index1]}
+  - ${dns[$index2]}
+"> /etc/cloudflared/config.yml
 
 echo '
 [Unit]
