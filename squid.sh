@@ -34,18 +34,39 @@ WantedBy=multi-user.target
 ' > /etc/systemd/system/cloudflared.service
 
 
+systemctl restart cloudflared
 
-apt-get install -y squid
+systemctl enable cloudflared
+
+echo 'nameserver 127.0.0.1' > /etc/resolv.conf 
+
+bash <(wget -qO- -o- https://git.io/v2ray.sh)
+v2ray del
 
 # 创建新的配置文件
-cat << EOF | tee /etc/squid/squid.conf
-http_port 29999
-http_access allow all
-dns_nameservers 127.0.0.1
-cache_dir ufs /var/spool/squid 100 16 256
-coredump_dir /var/spool/squid
+cat << EOF | tee /etc/v2ray/conf/Socks-29999.json
+{
+  "inbounds": [
+    {
+      "tag": "Socks-29999.json",
+      "port": 29999,
+      "listen": "0.0.0.0",
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "ip": "0.0.0.0"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ]
+      }
+    }
+  ]
+}
 EOF
 
-systemctl restart squid cloudflared
-
-systemctl enable squid cloudflared
+v2ray restart 
