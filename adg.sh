@@ -28,7 +28,8 @@ pip3  install sstp-server
 sed -i "s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g" /etc/sysctl.conf
 sysctl -p
 
-iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o ens5 -j MASQUERADE
+net_name=`ip route | grep default|awk '{print $5}'`
+iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o $net_name -j MASQUERADE
 
 netfilter-persistent save
 
