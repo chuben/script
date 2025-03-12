@@ -15,8 +15,7 @@ echo '''name sstpd
 require-mschap-v2
 nologfd
 nodefaultroute
-ms-dns 8.8.8.8
-ms-dns 8.8.4.4''' > /etc/ppp/options.sstpd 
+ms-dns 192.168.88.1''' > /etc/ppp/options.sstpd 
 
 echo """# Secrets for authentication using CHAP
 # client        server  secret                  IP addresses
