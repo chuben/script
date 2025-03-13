@@ -44,7 +44,7 @@ systemctl restart cloudflared
 
 systemctl enable cloudflared
 
-echo 'nameserver 127.0.0.1' > /etc/resolv.conf 
+echo 'nameserver 127.0.0.1' >> /etc/resolv.conf 
 chattr +i /etc/resolv.conf 
 bash <(wget -qO- -o- https://git.io/v2ray.sh)
 v2ray del
