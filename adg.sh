@@ -24,7 +24,11 @@ vm * $1 192.168.88.200""" > /etc/ppp/chap-secrets
 
 pip3  install sstp-server
 
-sed -i "s/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g" /etc/sysctl.conf
+echo '''
+net.ipv4.ip_forward=1
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+''' >  /etc/sysctl.conf 
 sysctl -p
 
 net_name=`ip route | grep default|awk '{print $5}'`
