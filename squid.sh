@@ -1,5 +1,11 @@
 #!/bin/bash
 
+echo '''
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+''' >  /etc/sysctl.conf 
+sysctl -p
+
 wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
 chmod +x cloudflared-linux-amd64
 mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
