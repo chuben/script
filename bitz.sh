@@ -17,7 +17,7 @@ install_rust() {
   echo -e "${YELLOW}[1/8] 正在安装Rust...${NC}"
   if ! command -v rustc &> /dev/null; then
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source "$HOME/.cargo/env"
+    source ~/.cargo/env
     echo -e "${GREEN}Rust安装成功！版本: $(rustc --version)${NC}"
   else
     echo -e "${GREEN}检测到Rust已安装: $(rustc --version)${NC}"
@@ -103,7 +103,7 @@ start_claim_daemon() {
   cat > /usr/local/bin/auto_claim <<EOF
 #!/bin/bash
 source ~/.bashrc
-source "$HOME/.cargo/env"
+source ~/.cargo/env
 for i in {1..$MAX_RETRIES}; do
   echo "尝试第\$i次claim (自动确认y)..."
   if expect -c '
@@ -187,7 +187,7 @@ setup_monitoring() {
   cat > /usr/local/bin/mining_stats <<EOF
 #!/bin/bash
 source ~/.bashrc
-source "$HOME/.cargo/env"
+source ~/.cargo/env
 balance_now=\$(solana balance -k ~/.config/solana/id.json | awk '{print \$1}')
 echo -e "当前余额: \${balance_now} SOL"
 EOF
