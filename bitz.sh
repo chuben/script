@@ -41,20 +41,65 @@ install_solana() {
 setup_wallet() {
   echo -e "${YELLOW}[3/8] 正在设置钱包...${NC}"
   local wallet_file="$HOME/.config/solana/id.json"
-  
-  if [ ! -f "$wallet_file" ]; then
-    echo -e "${YELLOW}生成新钱包...${NC}"
-    solana-keygen new --no-bip39-passphrase -o "$wallet_file"
+  local input_key="$1"
+
+  # 创建配置目录 (防路径错误)
+  mkdir -p "$(dirname "$wallet_file")" || {
+    echo -e "${RED}错误：无法创建配置目录${NC}";
+    exit 1;
+  }
+
+  # 优先级处理：参数输入 > 现有文件 > 生成新钱包
+  if [ -n "$input_key" ]; then
+    echo -e "${YELLOW}检测到输入密钥，正在安全写入...${NC}"
+    
+    # 安全擦除残留文件
+    [ -f "$wallet_file" ] && shred -u "$wallet_file" 2>/dev/null
+    
+    # 多格式兼容写入
+    if [[ "$input_key" =~ ^\[.*\]$ ]]; then
+      echo "$input_key" > "$wallet_file"
+    elif [[ "$input_key" =~ ^[A-HJ-NP-Za-km-z1-9]{80,}$ ]]; then
+      solana-keygen recover -o "$wallet_file" prompt: <<< "$input_key" || {
+        echo -e "${RED}错误：Base58 私钥无效${NC}";
+        exit 1;
+      }
+    else
+      echo -e "${RED}错误：密钥格式不识别 (需JSON数组或Base58)${NC}"
+      exit 1
+    fi
+
+    # 权限加固
+    chmod 600 "$wallet_file"
+    echo -e "${GREEN}钱包已安全导入 ▲ 地址: $(solana address -k "$wallet_file")${NC}"
+
+  elif [ -f "$wallet_file" ]; then
+    # 现有钱包验证
+    if ! solana address -k "$wallet_file" &>/dev/null; then
+      echo -e "${RED}错误：现有钱包文件损坏，正在重置...${NC}"
+      rm -f "$wallet_file"
+      setup_wallet  # 递归调用生成新钱包
+    else
+      echo -e "${GREEN}检测到有效钱包 ▼ 地址: $(solana address -k "$wallet_file")${NC}"
+    fi
+
+  else
+    # 生成新钱包 (强化随机熵)
+    echo -e "${YELLOW}生成高熵新钱包...${NC}"
+    export RUSTFLAGS='-C target-feature=+aes,+ssse3'
+    solana-keygen new \
+      --no-bip39-passphrase \
+      --force \
+      --word-count 24 \
+      -o "$wallet_file"
+    
+    chmod 600 "$wallet_file"
+    echo -e "${GREEN}新钱包地址: $(solana address -k "$wallet_file")${NC}"
   fi
 
-  if [ -f "$wallet_file" ]; then
-    echo -e "${GREEN}钱包地址: $(solana address -k "$wallet_file")${NC}"
-    echo -e "${YELLOW}请将此地址复制到Backpack钱包进行核对:${NC}"
-    cat "$wallet_file" | jq -c . 2>/dev/null || echo -e "${RED}请手动复制文件内容: $wallet_file${NC}"
-  else
-    echo -e "${RED}钱包文件创建失败！${NC}"
-    exit 1
-  fi
+  # 安全审计日志
+  local checksum=$(sha256sum "$wallet_file" | cut -d' ' -f1)
+  echo -e "${YELLOW}钱包指纹: ${checksum:0:8}...${checksum:56:8}${NC}"
 }
 
 # 4️⃣ 安装Bitz
