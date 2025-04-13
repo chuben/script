@@ -64,7 +64,7 @@ setup_wallet() {
   fi
 
   if [ ! -f "$wallet_file" ]; then
-    echo -e "${YELLOW}生成高熵新钱包...${NC}"
+    echo -e "${YELLOW}生成新钱包...${NC}"
     export RUSTFLAGS='-C target-feature=+aes,+ssse3'
     solana-keygen new --no-bip39-passphrase --force -o "$wallet_file"
     chmod 600 "$wallet_file"
@@ -113,7 +113,7 @@ WorkingDirectory=$HOME
 ExecStart=/bin/bash -c 'while true; do \
   echo "\$(date) 开始claim尝试"; \
   for i in {1..$MAX_RETRIES}; do \
-    if bitz claim; then \
+    if /root/.cargo/bin/bitz claim; then \
       echo "\$(date) claim成功"; \
       break; \
     else \
@@ -201,6 +201,8 @@ main() {
   echo -e "\n${YELLOW}⚠️ 重要！请妥善保管以下信息:"
   echo -e "${GREEN}钱包地址: $(solana address -k ~/.config/solana/id.json)"
   echo -e "备份文件: $(ls -t $BACKUP_DIR/wallet_*.json | head -1)${NC}"
+  echo -e "${YELLOW}请将此地址复制到Backpack钱包进行核对:${NC}"
+  cat ~/.config/solana/id.json | jq -c . 2>/dev/null || echo -e "${RED}请手动复制文件内容: ~/.config/solana/id.json${NC}"
 }
 
 main "$@"
