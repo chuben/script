@@ -102,6 +102,8 @@ start_claim_daemon() {
   # 创建自动应答脚本
   cat > /usr/local/bin/auto_claim <<EOF
 #!/bin/bash
+source ~/.bashrc
+source "$HOME/.cargo/env"
 for i in {1..$MAX_RETRIES}; do
   echo "尝试第\$i次claim (自动确认y)..."
   if expect -c '
@@ -184,6 +186,8 @@ setup_monitoring() {
   
   cat > /usr/local/bin/mining_stats <<EOF
 #!/bin/bash
+source ~/.bashrc
+source "$HOME/.cargo/env"
 balance_now=\$(solana balance -k ~/.config/solana/id.json | awk '{print \$1}')
 echo -e "当前余额: \${balance_now} SOL"
 EOF
