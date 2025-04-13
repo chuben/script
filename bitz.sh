@@ -18,7 +18,7 @@ install_rust() {
   if ! command -v rustc &> /dev/null; then
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     sed -i "/cargo/d" ~/.bashrc
-    echo 'export PATH="root/.cargo/bin:$PATH"' >> ~/.bashrc
+    echo 'export PATH="/root/.cargo/bin:$PATH"' >> ~/.bashrc
     source ~/.bashrc
     echo -e "${GREEN}Rust安装成功！版本: $(rustc --version)${NC}"
   else
