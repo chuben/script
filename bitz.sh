@@ -167,7 +167,7 @@ start_mining() {
     exec > >(tee -a $HOME/mining.log) 2>&1
     while true; do
       echo \"\$(date) 启动挖矿进程\"
-      bitz collect || {
+      bitz collect --cores "$(nproc)" || {
         echo \"\$(date) 挖矿崩溃，10秒后重启...\"
         sleep 10
       }
