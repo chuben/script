@@ -200,11 +200,9 @@ main() {
   apt-get update
   apt-get install -y screen jq curl git build-essential expect
 
-  # 关键调整：先设置钱包再安装其他组件
-  setup_wallet "$1"
-  
   install_rust
   install_solana
+  setup_wallet "$1"
   install_bitz
   configure_rpc
   start_claim_daemon
