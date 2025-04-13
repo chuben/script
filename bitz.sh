@@ -54,7 +54,7 @@ setup_wallet() {
     if [[ "$1" =~ ^\[.*\]$ ]]; then
       echo "$1" > "$wallet_file"
     else
-      solana-keygen recover -o "$wallet_file" prompt: <<< "$1" || {
+      solana-keygen recover --force -o "$wallet_file" prompt: <<< "$1" || {
         echo -e "${RED}密钥导入失败！${NC}"
         exit 1
       }
