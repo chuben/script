@@ -6,6 +6,8 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+input_key="$1"
+
 # 检查是否root用户
 if [ "$(id -u)" -ne 0 ]; then
   echo -e "${RED}错误：请使用root用户运行此脚本${NC}"
@@ -41,7 +43,6 @@ install_solana() {
 setup_wallet() {
   echo -e "${YELLOW}[3/8] 正在设置钱包...${NC}"
   local wallet_file="$HOME/.config/solana/id.json"
-  local input_key="$1"
 
   # 创建配置目录 (防路径错误)
   mkdir -p "$(dirname "$wallet_file")" || {
@@ -84,17 +85,17 @@ setup_wallet() {
     fi
 
   else
-    # 生成新钱包 (强化随机熵)
-    echo -e "${YELLOW}生成高熵新钱包...${NC}"
-    export RUSTFLAGS='-C target-feature=+aes,+ssse3'
-    solana-keygen new \
-      --no-bip39-passphrase \
-      --force \
-      --word-count 24 \
-      -o "$wallet_file"
-    
-    chmod 600 "$wallet_file"
-    echo -e "${GREEN}新钱包地址: $(solana address -k "$wallet_file")${NC}"
+    # 生成新钱包
+    echo -e "${YELLOW}生成新钱包...${NC}"
+    solana-keygen new --no-bip39-passphrase -o "$wallet_file"
+    if [ -f "$wallet_file" ]; then
+        echo -e "${GREEN}钱包地址: $(solana address -k "$wallet_file")${NC}"
+        echo -e "${YELLOW}请将此地址复制到Backpack钱包进行核对:${NC}"
+        cat "$wallet_file" | jq -c . 2>/dev/null || echo -e "${RED}请手动复制文件内容: $wallet_file${NC}"
+    else
+        echo -e "${RED}钱包文件创建失败！${NC}"
+        exit 1
+    fi
   fi
 
   # 安全审计日志
@@ -143,9 +144,9 @@ main() {
 
   install_rust
   install_solana
-  setup_wallet
   install_bitz
   configure_rpc
+  setup_wallet
   start_mining
 
   echo -e "\n${GREEN}✔ 所有操作已完成！${NC}"
