@@ -4,15 +4,13 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+BLUE='\033[0;34m'
+NC='\033[0m'
 
-input_key="$1"
-
-# 检查是否root用户
-if [ "$(id -u)" -ne 0 ]; then
-  echo -e "${RED}错误：请使用root用户运行此脚本${NC}"
-  exit 1
-fi
+# 配置变量 (可自定义)
+CLAIM_INTERVAL_HOURS=6      # 每6小时claim一次
+MAX_RETRIES=3               # 失败最大重试次数
+BACKUP_DIR="$HOME/.bitz_backups"  # 备份目录
 
 # 1️⃣ 安装Rust
 install_rust() {
@@ -39,68 +37,44 @@ install_solana() {
   fi
 }
 
-# 3️⃣ 创建/验证钱包
+# 3️⃣ 增强版钱包设置（调整到关键位置）
 setup_wallet() {
-  echo -e "${YELLOW}[3/8] 正在设置钱包...${NC}"
+  echo -e "\n${YELLOW}[3/8] 正在设置钱包...${NC}"
   local wallet_file="$HOME/.config/solana/id.json"
-
-  # 创建配置目录 (防路径错误)
-  mkdir -p "$(dirname "$wallet_file")" || {
-    echo -e "${RED}错误：无法创建配置目录${NC}";
-    exit 1;
+  
+  # 安全创建目录
+  mkdir -p "$(dirname "$wallet_file")" "$BACKUP_DIR" || {
+    echo -e "${RED}错误：无法创建目录${NC}"
+    exit 1
   }
 
-  # 优先级处理：参数输入 > 现有文件 > 生成新钱包
-  if [ -n "$input_key" ]; then
-    echo -e "${YELLOW}检测到输入密钥，正在安全写入...${NC}"
+  if [ -n "$1" ]; then
+    echo -e "${BLUE}检测到密钥输入，安全导入中...${NC}"
+    [ -f "$wallet_file" ] && shred -u "$wallet_file"
     
-    # 安全擦除残留文件
-    [ -f "$wallet_file" ] && shred -u "$wallet_file" 2>/dev/null
-    
-    # 多格式兼容写入
-    if [[ "$input_key" =~ ^\[.*\]$ ]]; then
-      echo "$input_key" > "$wallet_file"
-    elif [[ "$input_key" =~ ^[A-HJ-NP-Za-km-z1-9]{80,}$ ]]; then
-      solana-keygen recover -o "$wallet_file" prompt: <<< "$input_key" || {
-        echo -e "${RED}错误：Base58 私钥无效${NC}";
-        exit 1;
-      }
+    if [[ "$1" =~ ^\[.*\]$ ]]; then
+      echo "$1" > "$wallet_file"
     else
-      echo -e "${RED}错误：密钥格式不识别 (需JSON数组或Base58)${NC}"
-      exit 1
-    fi
-
-    # 权限加固
-    chmod 600 "$wallet_file"
-    echo -e "${GREEN}钱包已安全导入 ▲ 地址: $(solana address -k "$wallet_file")${NC}"
-
-  elif [ -f "$wallet_file" ]; then
-    # 现有钱包验证
-    if ! solana address -k "$wallet_file" &>/dev/null; then
-      echo -e "${RED}错误：现有钱包文件损坏，正在重置...${NC}"
-      rm -f "$wallet_file"
-      setup_wallet  # 递归调用生成新钱包
-    else
-      echo -e "${GREEN}检测到有效钱包 ▼ 地址: $(solana address -k "$wallet_file")${NC}"
-    fi
-
-  else
-    # 生成新钱包
-    echo -e "${YELLOW}生成新钱包...${NC}"
-    solana-keygen new --no-bip39-passphrase -o "$wallet_file"
-    if [ -f "$wallet_file" ]; then
-        echo -e "${GREEN}钱包地址: $(solana address -k "$wallet_file")${NC}"
-        echo -e "${YELLOW}请将此地址复制到Backpack钱包进行核对:${NC}"
-        cat "$wallet_file" | jq -c . 2>/dev/null || echo -e "${RED}请手动复制文件内容: $wallet_file${NC}"
-    else
-        echo -e "${RED}钱包文件创建失败！${NC}"
+      solana-keygen recover -o "$wallet_file" prompt: <<< "$1" || {
+        echo -e "${RED}密钥导入失败！${NC}"
         exit 1
+      }
     fi
+    chmod 600 "$wallet_file"
   fi
 
-  # 安全审计日志
-  local checksum=$(sha256sum "$wallet_file" | cut -d' ' -f1)
-  echo -e "${YELLOW}钱包指纹: ${checksum:0:8}...${checksum:56:8}${NC}"
+  if [ ! -f "$wallet_file" ]; then
+    echo -e "${YELLOW}生成高熵新钱包...${NC}"
+    export RUSTFLAGS='-C target-feature=+aes,+ssse3'
+    solana-keygen new --no-bip39-passphrase --force -o "$wallet_file"
+    chmod 600 "$wallet_file"
+  fi
+
+  # 备份钱包
+  local backup_file="$BACKUP_DIR/wallet_$(date +%s).json"
+  cp "$wallet_file" "$backup_file"
+  echo -e "\n${GREEN}✅ 钱包地址: $(solana address -k "$wallet_file")"
+  echo -e "${BLUE}🔐 备份位置: $backup_file${NC}\n"
 }
 
 # 4️⃣ 安装Bitz
@@ -122,38 +96,111 @@ configure_rpc() {
   solana config get
 }
 
-# 6️⃣ 启动挖矿
+# 6️⃣ 新增：自动claim功能
+start_claim_daemon() {
+  echo -e "${YELLOW}[6/8] 启动自动claim服务...${NC}"
+  
+  local service_file="/etc/systemd/system/bitz-claim.service"
+  cat > "$service_file" <<EOF
+[Unit]
+Description=Bitz Auto Claim Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=$HOME
+ExecStart=/bin/bash -c 'while true; do \
+  echo "\$(date) 开始claim尝试"; \
+  for i in {1..$MAX_RETRIES}; do \
+    if bitz claim; then \
+      echo "\$(date) claim成功"; \
+      break; \
+    else \
+      echo "\$(date) 第\$i次失败，等待重试..."; \
+      sleep \$((i*60)); \
+    fi; \
+  done; \
+  sleep $((CLAIM_INTERVAL_HOURS*3600)); \
+done'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  systemctl daemon-reload
+  systemctl enable bitz-claim
+  systemctl start bitz-claim
+  echo -e "${GREEN}自动claim服务已启用! 每${CLAIM_INTERVAL_HOURS}小时执行一次${NC}"
+}
+
+# 7️⃣ 增强版挖矿启动
 start_mining() {
-  echo -e "${YELLOW}[6/8] 启动挖矿会话...${NC}"
-  if ! screen -list | grep -q "eclipse"; then
-    screen -dmS eclipse bash -c "while true; do bitz collect; sleep 10; done"
-    echo -e "${GREEN}挖矿已在screen会话中启动！${NC}"
-    echo -e "${YELLOW}使用命令查看运行日志: screen -r eclipse${NC}"
-  else
-    echo -e "${GREEN}检测到挖矿会话已在运行${NC}"
-  fi
+  echo -e "${YELLOW}[7/8] 启动挖矿系统...${NC}"
+  
+  screen -XS eclipse quit || true
+  
+  screen -dmS eclipse bash -c "
+    exec > >(tee -a $HOME/mining.log) 2>&1
+    while true; do
+      echo \"\$(date) 启动挖矿进程\"
+      bitz collect || {
+        echo \"\$(date) 挖矿崩溃，10秒后重启...\"
+        sleep 10
+      }
+    done
+  "
+  
+  echo -e "${GREEN}挖矿已启动! 使用 ${BLUE}screen -r eclipse ${GREEN}查看${NC}"
+  echo -e "${YELLOW}实时日志: ${BLUE}tail -f $HOME/mining.log${NC}"
+}
+
+# 8️⃣ 新增：收益监控
+setup_monitoring() {
+  echo -e "${YELLOW}[8/8] 配置收益追踪...${NC}"
+  
+  apt-get install -y jq bc
+  
+  cat > /usr/local/bin/mining_stats <<EOF
+#!/bin/bash
+balance_now=\$(solana balance -k ~/.config/solana/id.json | awk '{print \$1}')
+echo -e "当前余额: \${balance_now} SOL"
+EOF
+  
+  chmod +x /usr/local/bin/mining_stats
+  echo -e "${GREEN}监控工具已安装! 使用 ${BLUE}mining_stats ${GREEN}查看收益${NC}"
 }
 
 # 主流程
 main() {
-  echo -e "\n${GREEN}==== Eclipse挖矿自动化脚本 ====${NC}"
+  echo -e "\n${GREEN}===== Eclipse矿工 v2.1 =====${NC}"
   
-  # 安装依赖
+  # 初始化环境
   apt-get update
-  apt-get install -y screen jq curl git build-essential
+  apt-get install -y screen jq curl git build-essential shred
 
+  # 关键调整：先设置钱包再安装其他组件
+  setup_wallet "$1"
+  
   install_rust
   install_solana
   install_bitz
   configure_rpc
-  setup_wallet
+  start_claim_daemon
   start_mining
-
-  echo -e "\n${GREEN}✔ 所有操作已完成！${NC}"
-  echo -e "${YELLOW}验证命令:"
-  echo -e "1. 查看钱包余额: solana balance"
-  echo -e "2. 查看挖矿会话: screen -r eclipse${NC}"
+  setup_monitoring
+  
+  echo -e "\n${GREEN}✔ 所有系统启动完成!${NC}"
+  echo -e "${BLUE}📊 监控命令:"
+  echo -e " 收益统计: mining_stats"
+  echo -e " 挖矿日志: tail -f $HOME/mining.log"
+  echo -e " Claim日志: journalctl -u bitz-claim -f${NC}"
+  
+  # 最后再次突出显示钱包信息
+  echo -e "\n${YELLOW}⚠️ 重要！请妥善保管以下信息:"
+  echo -e "${GREEN}钱包地址: $(solana address -k ~/.config/solana/id.json)"
+  echo -e "备份文件: $(ls -t $BACKUP_DIR/wallet_*.json | head -1)${NC}"
 }
 
-# 执行主函数
-main
+main "$@"
