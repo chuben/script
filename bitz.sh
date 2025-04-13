@@ -50,8 +50,7 @@ setup_wallet() {
 
   if [ -n "$1" ]; then
     echo -e "${BLUE}检测到密钥输入，安全导入中...${NC}"
-    [ -f "$wallet_file" ] && shred -u "$wallet_file"
-    
+
     if [[ "$1" =~ ^\[.*\]$ ]]; then
       echo "$1" > "$wallet_file"
     else
@@ -98,10 +97,35 @@ configure_rpc() {
 
 # 6️⃣ 新增：自动claim功能
 start_claim_daemon() {
-  echo -e "${YELLOW}[6/8] 启动自动claim服务...${NC}"
-  
-  local service_file="/etc/systemd/system/bitz-claim.service"
-  cat > "$service_file" <<EOF
+  echo -e "${YELLOW}[6/8] 配置自动claim服务...${NC}"
+
+  # 创建自动应答脚本
+  cat > /usr/local/bin/auto_claim <<EOF
+#!/bin/bash
+for i in {1..$MAX_RETRIES}; do
+  echo "尝试第\$i次claim (自动确认y)..."
+  if expect -c '
+    set timeout 300
+    spawn bitz claim
+    expect {
+      "y/n" { send "y\\r"; exp_continue }
+      eof
+    }
+  '; then
+    echo "\$(date) claim成功"
+    exit 0
+  else
+    echo "\$(date) claim失败，等待重试..."
+    sleep \$((i*60))
+  fi
+done
+exit 1
+EOF
+
+  chmod +x /usr/local/bin/auto_claim
+
+  # 创建systemd服务
+  cat > /etc/systemd/system/bitz-claim.service <<EOF
 [Unit]
 Description=Bitz Auto Claim Service
 After=network.target
@@ -111,19 +135,11 @@ Type=simple
 User=root
 WorkingDirectory=$HOME
 ExecStart=/bin/bash -c 'while true; do \
-  echo "\$(date) 开始claim尝试"; \
-  for i in {1..$MAX_RETRIES}; do \
-    if /root/.cargo/bin/bitz claim; then \
-      echo "\$(date) claim成功"; \
-      break; \
-    else \
-      echo "\$(date) 第\$i次失败，等待重试..."; \
-      sleep \$((i*60)); \
-    fi; \
-  done; \
+  /usr/local/bin/auto_claim && \
   sleep $((CLAIM_INTERVAL_HOURS*3600)); \
 done'
-Restart=always
+Restart=on-failure
+RestartSec=60
 
 [Install]
 WantedBy=multi-user.target
@@ -132,7 +148,11 @@ EOF
   systemctl daemon-reload
   systemctl enable bitz-claim
   systemctl start bitz-claim
-  echo -e "${GREEN}自动claim服务已启用! 每${CLAIM_INTERVAL_HOURS}小时执行一次${NC}"
+  
+  echo -e "${GREEN}自动claim服务已部署! 特性:"
+  echo -e "• 自动应答 y/n 确认"
+  echo -e "• 失败后指数退避重试 (最多$MAX_RETRIES次)"
+  echo -e "• 每${CLAIM_INTERVAL_HOURS}小时运行一次${NC}"
 }
 
 # 7️⃣ 增强版挖矿启动
@@ -178,7 +198,7 @@ main() {
   
   # 初始化环境
   apt-get update
-  apt-get install -y screen jq curl git build-essential shred
+  apt-get install -y screen jq curl git build-essential expect
 
   # 关键调整：先设置钱包再安装其他组件
   setup_wallet "$1"
