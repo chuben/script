@@ -1,5 +1,7 @@
 #!/bin/bash
 
+su root
+
 # 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -10,7 +12,7 @@ NC='\033[0m'
 # 配置变量 (可自定义)
 CLAIM_INTERVAL_HOURS=6      # 每6小时claim一次
 MAX_RETRIES=3               # 失败最大重试次数
-BACKUP_DIR="$HOME/.bitz_backups"  # 备份目录
+BACKUP_DIR="/root/.bitz_backups"  # 备份目录
 
 # 1️⃣ 安装Rust
 install_rust() {
@@ -40,7 +42,7 @@ install_solana() {
 # 3️⃣ 增强版钱包设置（调整到关键位置）
 setup_wallet() {
   echo -e "\n${YELLOW}[3/8] 正在设置钱包...${NC}"
-  local wallet_file="$HOME/.config/solana/id.json"
+  local wallet_file="/root/.config/solana/id.json"
   
   # 安全创建目录
   mkdir -p "$(dirname "$wallet_file")" "$BACKUP_DIR" || {
@@ -135,7 +137,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=$HOME
+WorkingDirectory=/root
 ExecStart=/bin/bash -c 'while true; do \
   /usr/local/bin/auto_claim && \
   sleep $((CLAIM_INTERVAL_HOURS*3600)); \
@@ -164,7 +166,7 @@ start_mining() {
   screen -XS eclipse quit || true
   
   screen -dmS eclipse bash -c "
-    exec > >(tee -a $HOME/mining.log) 2>&1
+    exec > >(tee -a /root/mining.log) 2>&1
     while true; do
       echo \"\$(date) 启动挖矿进程\"
       bitz collect --cores "$(nproc)" || {
@@ -175,7 +177,7 @@ start_mining() {
   "
   
   echo -e "${GREEN}挖矿已启动! 使用 ${BLUE}screen -r eclipse ${GREEN}查看${NC}"
-  echo -e "${YELLOW}实时日志: ${BLUE}tail -f $HOME/mining.log${NC}"
+  echo -e "${YELLOW}实时日志: ${BLUE}tail -f /root/mining.log${NC}"
 }
 
 # 8️⃣ 新增：收益监控
@@ -216,7 +218,7 @@ main() {
   echo -e "\n${GREEN}✔ 所有系统启动完成!${NC}"
   echo -e "${BLUE}📊 监控命令:"
   echo -e " 收益统计: mining_stats"
-  echo -e " 挖矿日志: tail -f $HOME/mining.log"
+  echo -e " 挖矿日志: tail -f /root/mining.log"
   echo -e " Claim日志: journalctl -u bitz-claim -f${NC}"
   
   # 最后再次突出显示钱包信息
