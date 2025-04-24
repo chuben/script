@@ -1,6 +1,6 @@
 #!/bin/bash
+[ "$1" ] && WALLET_ADDR="$1" || WALLET_ADDR="SbxQm8HWUQefijEd8KDJkQMKbnpxvEDdBNweDXhH6T6"
 SERVER_URL="http://minebitz1.oreminepool.top:8880/"
-WALLET_ADDR="SbxQm8HWUQefijEd8KDJkQMKbnpxvEDdBNweDXhH6T6"
 INSTALL_DIR="/opt/bitz"
 SERVICE_NAME="bitz"
 
