@@ -17,11 +17,25 @@ wget -q --show-progress https://github.com/xintai6660707/ore-mine-pool/raw/refs/
 echo '''#!/bin/bash
 ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
 [ -z "$ip" ] && exit 1
-instype=$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/instance-type| sed "s/xlarge//g"|sed "s/\.//g")
-[ -z "$instype" ] && exit 1
-country=$(wget -T 3 -t 2 -qO - http://169.254.169.254/2021-03-23/meta-data/placement/availability-zone|cut -b 1-2 )
-[ -z "$country" ] && exit 1
-minerAlias=${country}_${instype}_$ip
+
+declare -A encrypt_dict=(
+    ["0"]="a" ["1"]="b" ["2"]="c" ["3"]="d" ["4"]="e"
+    ["5"]="f" ["6"]="g" ["7"]="h" ["8"]="i" ["9"]="j"
+    ["."]="k"
+)
+
+encrypt_ip() {
+    local ip=$1
+    local result=""
+    for (( i=0; i<${#ip}; i++ )); do
+        char="${ip:$i:1}"
+        result+="${encrypt_dict[$char]:-$char}"
+    done
+    echo "$result"
+}
+
+minerAlias=$(encrypt_ip "$ip")
+
 ''' > $INSTALL_DIR/start.sh
 
 echo "$INSTALL_DIR/ore-mine-pool-linux-avx512 worker --route-server-url '$SERVER_URL'  --server-url 'bitz' --worker-wallet-address '$WALLET_ADDR' --alias \$minerAlias">> $INSTALL_DIR/start.sh

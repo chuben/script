@@ -15,6 +15,7 @@ wget -qO-  https://github.com/egg5233/OrionClient_tw/releases/download/1.6.0/Ori
 
 echo '''#!/bin/bash
 ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
+[ -z "$ip" ] && exit 1
 
 declare -A encrypt_dict=(
     ["0"]="a" ["1"]="b" ["2"]="c" ["3"]="d" ["4"]="e"
