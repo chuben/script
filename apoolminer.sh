@@ -1,5 +1,10 @@
 #!/bin/bash
 
+systemctl stop tari
+systemctl stop bitz
+systemctl disable tari
+systemctl disable bitz
+
 set -e
 
 echo "========== apoolminer 自动安装并注册为服务 =========="
