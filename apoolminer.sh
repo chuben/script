@@ -4,7 +4,7 @@ set -e
 
 echo "========== apoolminer 自动安装并注册为服务 =========="
 
-[ "$1" ] && ACCOUNT="$1" || WALLET_ADDR="CP_2b4k7rqhk2"
+[ "$1" ] && ACCOUNT="$1" || ACCOUNT="CP_2b4k7rqhk2"
 INSTALL_DIR="/opt/apoolminer"
 SERVICE_FILE="/etc/systemd/system/apoolminer.service"
 POOL="qubic1.hk.apool.io:3334"
