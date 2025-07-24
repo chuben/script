@@ -1,38 +1,59 @@
 #!/bin/bash
 
-systemctl stop tari
-systemctl stop bitz
-systemctl disable tari
-systemctl disable bitz
+systemctl stop tari || true
+systemctl stop bitz || true
+systemctl disable tari || true
+systemctl disable bitz || true
 
 set -e
 
 echo "========== apoolminer 自动安装并注册为服务 =========="
 
-[ "$1" ] && ACCOUNT="$1" || ACCOUNT="CP_2b4k7rqhk2"
+ACCOUNT="${1:-CP_2b4k7rqhk2}"
 INSTALL_DIR="/opt/apoolminer"
 SERVICE_FILE="/etc/systemd/system/apoolminer.service"
-POOL="qubic1.hk.apool.io:3334"
-mkdir -p "$INSTALL_DIR"
+POOL="xmr.hk.apool.io:3334"
+
+if [ -d "$INSTALL_DIR" ]; then
+    rm -rf "$INSTALL_DIR"/*
+else
+    mkdir -p "$INSTALL_DIR"
+fi
 
 # 安装依赖
 echo "安装必要组件..."
-apt update && apt install -y wget tar
+apt update && apt install -y wget tar jq
 
 # 下载
 echo "下载 apoolminer..."
-VERSION=$(wget -qO- https://api.github.com/repos/apool-io/apoolminer/releases/latest | grep tag_name | cut -d '"' -f 4)
-[ "$?" -ne 0 ] || [ -z "$VERSION" ] && VERSION='v3.1.0'
+VERSION=$(wget -qO- https://api.github.com/repos/apool-io/apoolminer/releases/latest | jq -r .tag_name)
+[ -z "$VERSION" ] && VERSION="v3.2.0"
 DOWNLOAD_URL="https://github.com/apool-io/apoolminer/releases/download/${VERSION}/apoolminer_linux_${VERSION}.tar"
-wget -qO- "$DOWNLOAD_URL" | tar -zxf - -C $INSTALL_DIR
+wget -qO- "$DOWNLOAD_URL" | tar -zxf - -C "$INSTALL_DIR"
 
+# 写入 update.sh
+cat > "$INSTALL_DIR/update.sh" <<EOF
+#!/bin/bash
+LAST_VERSION=\$(wget -qO- https://api.github.com/repos/apool-io/apoolminer/releases/latest | jq -r .tag_name | cut -b 2-)
+LOCAL_VERSION=\$("$INSTALL_DIR"/apoolminer --version | awk '{print \$2}')
+[ "\$LAST_VERSION" == "\$LOCAL_VERSION" ] && echo '无更新' && exit 0
+echo "\$LAST_VERSION" | awk -F . '{print \$1\$2\$3, "LAST_VERSION"}' > /tmp/versions
+echo "\$LOCAL_VERSION" | awk -F . '{print \$1\$2\$3, "LOCAL_VERSION"}' >> /tmp/versions
+NEW_VERSION=\$(sort -n /tmp/versions | tail -1 | awk '{print \$2}')
+[ "\$NEW_VERSION" == "\$LOCAL_VERSION" ] && exit 0
+bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/apoolminer.sh) "$ACCOUNT"
+EOF
 
-# 创建 systemd 服务
-echo "创建 systemd 服务文件..."
+chmod +x "$INSTALL_DIR/update.sh"
 
-echo '''#!/bin/bash
-ip="$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)"
-[ -z "$ip" ] && exit 1
+# 写入 run.sh
+cat > "$INSTALL_DIR/run.sh" <<EOF
+#!/bin/bash
+
+/bin/bash "$INSTALL_DIR/update.sh"
+
+ip=\$(wget -T 3 -t 2 -qO- http://169.254.169.254/2021-03-23/meta-data/public-ipv4)
+[ -z "\$ip" ] && exit 1
 
 declare -A encrypt_dict=(
     ["0"]="a" ["1"]="b" ["2"]="c" ["3"]="d" ["4"]="e"
@@ -41,23 +62,23 @@ declare -A encrypt_dict=(
 )
 
 encrypt_ip() {
-    local ip=$1
+    local ip=\$1
     local result=""
-    for (( i=0; i<${#ip}; i++ )); do
-        char="${ip:$i:1}"
-        result+="${encrypt_dict[$char]:-$char}"
+    for (( i=0; i<\${#ip}; i++ )); do
+        char="\${ip:\$i:1}"
+        result+="\${encrypt_dict[\$char]:-\$char}"
     done
-    echo "$result"
+    echo "\$result"
 }
 
-minerAlias=$(encrypt_ip "$ip")
+minerAlias=\$(encrypt_ip "\$ip")
 
-''' > $INSTALL_DIR/run.sh
+exec "$INSTALL_DIR"/apoolminer --algo xmr --account "$ACCOUNT" --worker "\$minerAlias" --pool "$POOL"
+EOF
 
-echo "exec ${INSTALL_DIR}/apoolminer --algo qubic_xmr --account ${ACCOUNT} --worker \$minerAlias --pool ${POOL}" >> $INSTALL_DIR/run.sh
+chmod +x "$INSTALL_DIR/run.sh"
 
-chmod +x $INSTALL_DIR/run.sh
-
+# 写入 systemd 服务
 tee "$SERVICE_FILE" > /dev/null <<EOF
 [Unit]
 Description=Apool XMR Miner
@@ -75,7 +96,6 @@ Environment="LD_LIBRARY_PATH=$INSTALL_DIR"
 [Install]
 WantedBy=multi-user.target
 EOF
-
 
 # 启动服务
 echo "启用并启动 apoolminer 服务..."
