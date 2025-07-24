@@ -22,7 +22,8 @@ fi
 
 # 安装依赖
 echo "安装必要组件..."
-apt update && apt install -y wget tar jq
+apt update
+apt install -y wget tar jq
 
 # 下载
 echo "下载 apoolminer..."
