@@ -44,7 +44,7 @@ Address = 10.0.8.1/24
 PostUp   = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o $nic_name -j MASQUERADE
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o $nic_name -j MASQUERADE
 ListenPort = 50${ip}
-DNS = 172.31.0.2
+DNS = 1.1.1.2,1.1.1.3
 MTU = 1420
 
 [Peer]
