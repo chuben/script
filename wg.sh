@@ -41,7 +41,7 @@ PEER_PUB_KEY=$(echo "$ENC_PEER_PUB_KEY" | openssl enc -aes-256-cbc -a -d -salt -
 cat > /etc/wireguard/wg0.conf <<EOF
 [Interface]
 PrivateKey = $PRIVATE_KEY
-Address = 10.${ip_last1}.${ip_last2}.1/24,fe80:25bd:7d15:38b9::1/128
+Address = 10.${ip_last1}.${ip_last2}.1/24
 PostUp   = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o $nic_name -j MASQUERADE
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o $nic_name -j MASQUERADE
 ListenPort = 50${ip_last2}
@@ -50,7 +50,7 @@ MTU = 1420
 
 [Peer]
 PublicKey = $PEER_PUB_KEY
-AllowedIPs = 10.${ip_last1}.${ip_last2}.10/24,fe80:25bd:7d15:38b9::10/128
+AllowedIPs = 10.${ip_last1}.${ip_last2}.10/24
 EOF
 
 # 启动 WireGuard
