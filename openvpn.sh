@@ -1,6 +1,10 @@
 #!/bin/bash
+if [ -z "$1" ]; then
+    echo "❌ 用法: $0 <解密密钥>"
+    exit 1
+fi
 
-[ -z "$AGE_SECRET_KEY" ] && echo "export AGE_SECRET_KEY=<your-private-key>" && exit 1
+KEY="$1"
 
 if readlink /proc/$$/exe | grep -q "dash"; then
 	echo 'This installer needs to be run with "bash", not "sh".'
@@ -149,6 +153,10 @@ if [[ "$firewall" == "firewalld" ]]; then
 	systemctl enable --now firewalld.service
 fi
 wget -qO /tmp/conf.tar.gz.age "https://raw.githubusercontent.com/chuben/script/main/conf.tar.gz.age"
+
+ENC_AGE_SECRET_KEY="U2FsdGVkX1/kGblucAIThGngTkQrDOKJ5Zk5WhnJLbZ8sD63Z7vYkB/eLRQ/EDEk 99Pk1qZRb8de4oKRZ3+i1uLXgo1MlSrx09h32vpZRF75KGquHFn9uBAOA+qrjpe1"
+AGE_SECRET_KEY=$(echo "$ENC_AGE_SECRET_KEY" | openssl enc -aes-256-cbc -a -d -salt -pass pass:"$KEY")
+
 age -d -i <(echo "$AGE_SECRET_KEY") /tmp/conf.tar.gz.age | tar xz -C /etc/openvpn/server --strip-components=1
 
 chown nobody:"$group_name" /etc/openvpn/server/crl.pem
