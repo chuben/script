@@ -25,6 +25,8 @@ RestartSec=30
 [Install]
 WantedBy=multi-user.target
 EOF
+sudo systemctl stop exim4
+sudo systemctl disable exim4
 
 systemctl daemon-reload
 systemctl enable simple_mail_server
