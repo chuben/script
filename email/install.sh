@@ -38,7 +38,7 @@ save_mail_router:
 begin transports
 save_mail_transport:
   driver = pipe
-  command = /usr/bin/python3 /opt/email/save_mail
+  command = /opt/email/save_mail
   return_output
 begin retry
 * * F,2h,15m
@@ -51,15 +51,17 @@ update-exim4.conf
 systemctl restart exim4
 
 
-mkdir -p "/opt/email"
+mkdir -p "/opt/email/mailstore"
+mkdir -p "/opt/email/logs"
 
 wget -qO /opt/email/server https://raw.githubusercontent.com/chuben/script/main/email/server
 wget -qO /opt/email/save_mail https://raw.githubusercontent.com/chuben/script/main/email/save_mail
 
-chmod +x /opt/email/save_mail
-chmod +x /opt/email/server
+
 chown -R Debian-exim:Debian-exim /opt/email
 chmod -R 750 /opt/email
+chmod +x /opt/email/save_mail
+chmod +x /opt/email/server
 
 cat > /etc/systemd/system/simple_mail_server.service <<EOF
 [Unit]
