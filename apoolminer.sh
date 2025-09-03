@@ -12,7 +12,7 @@ echo "========== apoolminer 自动安装并注册为服务 =========="
 ACCOUNT="${1:-CP_2b4k7rqhk2}"
 INSTALL_DIR="/opt/apoolminer"
 SERVICE_FILE="/etc/systemd/system/apoolminer.service"
-POOL="xmr.hk.apool.io:3334"
+POOL="xmr.asia.apool.io:4334"
 
 if [ -d "$INSTALL_DIR" ]; then
     rm -rf "$INSTALL_DIR"/*
@@ -30,7 +30,7 @@ echo "下载 apoolminer..."
 VERSION=$(wget -qO- https://api.github.com/repos/apool-io/apoolminer/releases/latest | jq -r .tag_name)
 [ -z "$VERSION" ] && VERSION="v3.2.0"
 DOWNLOAD_URL="https://github.com/apool-io/apoolminer/releases/download/v3.2.2/apoolminer_linux_qubic_autoupdate_${VERSION}.tar.gz"
-wget -qO- "$DOWNLOAD_URL" | tar -zxf - -C "$INSTALL_DIR"
+wget -qO- "$DOWNLOAD_URL" | tar -zxf - -C "$INSTALL_DIR" --strip-components=1
 
 # 写入 update.sh
 cat > "$INSTALL_DIR/update.sh" <<EOF
@@ -73,8 +73,7 @@ encrypt_ip() {
 }
 
 minerAlias=\$(encrypt_ip "\$ip")
-
-exec "$INSTALL_DIR"/apoolminer --algo xmr --account "$ACCOUNT" --worker "\$minerAlias" --pool "$POOL"
+exec "$INSTALL_DIR"/apoolminer --algo qubic --account "$ACCOUNT" --worker "\$minerAlias" --pool "$POOL"
 EOF
 
 chmod +x "$INSTALL_DIR/run.sh"
