@@ -102,4 +102,4 @@ echo "启用并启动 apoolminer 服务..."
 systemctl daemon-reexec
 systemctl daemon-reload
 systemctl enable apoolminer
-systemctl start apoolminer
+systemctl restart apoolminer
