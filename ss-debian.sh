@@ -35,6 +35,31 @@ apt update && apt install -y wget
 
 bash <(wget -qO- https://git.io/v2ray.sh)
 
-v2ray del *
+rm -rf /etc/v2ray/conf/*
 
-v2ray add ss 8388 $pwd aes-256-gcm
+echo """
+{
+  \"inbounds\": [
+    {
+      \"tag\": \"Shadowsocks-8388.json\",
+      \"port\": 8388,
+      \"listen\": \"0.0.0.0\",
+      \"protocol\": \"shadowsocks\",
+      \"settings\": {
+        \"method\": \"aes-256-gcm\",
+        \"password\": \"$pwd\",
+        \"fast_open\": false,
+        \"network\": \"tcp,udp\"
+      },
+      \"sniffing\": {
+        \"enabled\": true,
+        \"destOverride\": [
+          \"http\",
+          \"tls\"
+        ]
+      }
+    }
+  ]
+}""" > /etc/v2ray/conf/Shadowsocks-8388.json 
+
+v2ray restart
