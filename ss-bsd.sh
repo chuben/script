@@ -11,6 +11,38 @@ echo "=== 更新 pkg 仓库并安装 shadowsocks-rust ==="
 pkg update
 pkg install -y shadowsocks-rust jq
 
+echo """
+########## macOS-like TCP profile ##########
+
+# 禁用 TCP 分段卸载（避免虚拟化特征）
+net.inet.tcp.tso=0
+
+# 启用 SACK（macOS 默认开启）
+net.inet.tcp.sack.enable=1
+
+# 启用 TCP timestamps（macOS 默认开启）
+net.inet.tcp.send_timestamps=1
+net.inet.tcp.recv_timestamps=1
+
+# 默认 MSS（以太网常见）      
+net.inet.tcp.mssdflt=1460
+
+# TCP 窗口大小（macOS 风格）
+net.inet.tcp.sendspace=65535
+net.inet.tcp.recvspace=65535
+
+# 禁用 TCP blackhole（避免异常行为）
+net.inet.tcp.blackhole=0
+net.inet.udp.blackhole=0
+
+# 允许 Path MTU Discovery
+net.inet.tcp.path_mtu_discovery=1
+
+###########################################
+""" > /etc/sysctl.conf
+
+service sysctl restart
+                
 # -----------------------------
 # 2. 生成配置文件
 # -----------------------------
