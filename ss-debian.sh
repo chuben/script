@@ -37,8 +37,7 @@ bash <(wget -qO- https://git.io/v2ray.sh)
 
 rm -rf /etc/v2ray/conf/*
 
-echo """
-{
+echo """{
   \"inbounds\": [
     {
       \"tag\": \"Shadowsocks-8388.json\",
@@ -49,14 +48,7 @@ echo """
         \"method\": \"aes-256-gcm\",
         \"password\": \"$pwd\",
         \"fast_open\": false,
-        \"network\": \"tcp,udp\"
-      },
-      \"sniffing\": {
-        \"enabled\": true,
-        \"destOverride\": [
-          \"http\",
-          \"tls\"
-        ]
+        \"network\": \"tcp\"
       }
     }
   ]
