@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[ "$1" ] && KEY="$1" || exit 1
+[ "$1" ] && pwd="$1" || exit 1
 
 echo """
 ######## Windows-like TCP profile ########
@@ -31,17 +31,27 @@ net.ipv4.tcp_mtu_probing=1
 """ > /etc/sysctl.conf
 sysctl -p
 
-apt update && apt install -y wget age
+apt update && apt install -y wget
 
 bash <(wget -qO- https://git.io/v2ray.sh)
 
 rm -rf /etc/v2ray/conf/*
 
-wget -qO /tmp/ss.json.age "https://raw.githubusercontent.com/chuben/script/main/ss.json.age"
-
-ENC_AGE_SECRET_KEY="U2FsdGVkX1/kGblucAIThGngTkQrDOKJ5Zk5WhnJLbZ8sD63Z7vYkB/eLRQ/EDEk 99Pk1qZRb8de4oKRZ3+i1uLXgo1MlSrx09h32vpZRF75KGquHFn9uBAOA+qrjpe1"
-AGE_SECRET_KEY=$(echo "$ENC_AGE_SECRET_KEY" | openssl enc -aes-256-cbc -a -d -salt -pass pass:"$KEY")
-
-age -d -i <(echo "$AGE_SECRET_KEY") /tmp/ss.json.age > /etc/v2ray/conf/Shadowsocks-8388.json 
+echo """{
+  \"inbounds\": [
+    {
+      \"tag\": \"Shadowsocks-8388.json\",
+      \"port\": 8388,
+      \"listen\": \"0.0.0.0\",
+      \"protocol\": \"shadowsocks\",
+      \"settings\": {
+        \"method\": \"aes-256-gcm\",
+        \"password\": \"$pwd\",
+        \"fast_open\": false,
+        \"network\": \"tcp\"
+      }
+    }
+  ]
+}""" > /etc/v2ray/conf/Shadowsocks-8388.json 
 
 v2ray restart
