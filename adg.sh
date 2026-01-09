@@ -1,11 +1,19 @@
 #!/bin/bash
 
+[ -z "$1" ] && exit || psw=$1
+
 export DEBIAN_FRONTEND=noninteractive
 echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
 echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
 
+vmlinuz_version=`ls /boot/vmlinuz* |tail -1 |awk -F '-' '{print $2"-"$3}'`
 apt update -y
-apt install linux-headers-6.1-amd64 linux-image-6.1-amd64 python3-pip ppp iptables-persistent netfilter-persistent  net-tools curl -y
+apt install -y linux-headers-${vmlinuz_version}-amd64 linux-image-${vmlinuz_version}-amd64 \
+    iptables-persistent netfilter-persistent  net-tools curl \
+    certbot python3-certbot-nginx git build-essential libssl-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
+    libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev \
+    python3-openssl ppp
 
 [ "$?" -eq 0 ] && rm -rf /boot/*cloud*
 
@@ -15,12 +23,30 @@ echo '''name sstpd
 require-mschap-v2
 nologfd
 nodefaultroute
-ms-dns 192.168.88.1''' > /etc/ppp/options.sstpd 
+ms-dns 192.168.85.1''' > /etc/ppp/options.sstpd 
 
 echo """# Secrets for authentication using CHAP
 # client        server  secret                  IP addresses
-ben * $1 *
-vm * $1 192.168.88.200""" > /etc/ppp/chap-secrets
+ben * $psw *
+vm * $psw 192.168.85.200""" > /etc/ppp/chap-secrets
+
+curl https://pyenv.run | bash
+
+
+echo '''export PATH="$HOME/.pyenv/bin:$PATH"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"''' >> ~/.bashrc 
+
+source ~/.bashrc 
+pyenv install 3.9.7
+
+pyenv global 3.9.7
+
+certbot --nginx --key-type rsa -d us.flunode.icu --non-interactive --agree-tos --email admin@flunode.icu
+mkdir -p /opt/sstp/
+
+cp -f /etc/letsencrypt/live/us.flunode.icu/* /opt/sstp/.
 
 pip3  install sstp-server
 
@@ -37,8 +63,7 @@ iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o $net_name -j MASQUERADE
 netfilter-persistent save
 
 echo '''#!/bin/bash
-sstpd -c  fullchain.pem -k privkey.pem  --local 192.168.88.1 --remote 192.168.88.0/24 -p 9443 -l 0.0.0.0''' > /opt/sstp/start.sh 
-
+/root/.pyenv/shims/sstpd -c  fullchain.pem -k privkey.pem  --local 192.168.85.1 --remote 192.168.85.0/24 -p 9443 -l 0.0.0.0''' > /opt/sstp/start.sh 
 cd /opt/sstp/
 chmod +x start.sh 
 
@@ -54,26 +79,7 @@ ExecStart=/opt/sstp/start.sh
 [Install]
 WantedBy=multi-user.target''' > /etc/systemd/system/sstp.service
 
-wget  -T 3 -t 2 -qO-  https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.107.57/AdGuardHome_linux_386.tar.gz | tar -zxf - -C /opt/ 
-chmod +x /opt/AdGuardHome/AdGuardHome
-
-mv /opt/AdGuardHome.yaml /opt/AdGuardHome/.
-
-echo '''[Unit]
-Description=AdGuardHome
-
-[Service]
-#Type=forking
-WorkingDirectory=/opt/AdGuardHome
-PrivateTmp=true
-ExecStart=/opt/AdGuardHome/AdGuardHome
-
-[Install]
-WantedBy=multi-user.target''' > /etc/systemd/system/AdGuardHome.service
-
 systemctl daemon-reload
-systemctl stop systemd-resolved
-systemctl disable systemd-resolved
-systemctl enable sstp AdGuardHome
+systemctl enable sstp
 
 reboot
