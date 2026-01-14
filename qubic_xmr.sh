@@ -73,7 +73,7 @@ encrypt_ip() {
 }
 
 minerAlias=\$(encrypt_ip "\$ip")
-exec ${INSTALL_DIR}/apoolminer --algo qubic --account "$ACCOUNT" --worker "\$minerAlias" --pool "$POOL"
+exec ${INSTALL_DIR}/apoolminer --algo qubic_xmr --account "$ACCOUNT" --worker "\$minerAlias" --pool "$POOL"
 EOF
 
 chmod +x "$INSTALL_DIR/run.sh"
