@@ -12,7 +12,7 @@ echo "========== apoolminer 自动安装并注册为服务 =========="
 ACCOUNT="${1:-CP_2b4k7rqhk2}"
 INSTALL_DIR="/opt/apoolminer"
 SERVICE_FILE="/etc/systemd/system/apoolminer.service"
-POOL="xmr.asia.apool.io:4334"
+POOL="qubic.asia.apool.io:4334"
 
 if [ -d "$INSTALL_DIR" ]; then
     rm -rf "$INSTALL_DIR"/*
@@ -73,7 +73,7 @@ encrypt_ip() {
 }
 
 minerAlias=\$(encrypt_ip "\$ip")
-exec ${INSTALL_DIR}/apoolminer --algo xmr --account "$ACCOUNT" --worker "\$minerAlias" --pool "$POOL"
+exec ${INSTALL_DIR}/apoolminer --algo qubic --account "$ACCOUNT" --worker "\$minerAlias" --pool "$POOL"
 EOF
 
 chmod +x "$INSTALL_DIR/run.sh"
@@ -81,7 +81,7 @@ chmod +x "$INSTALL_DIR/run.sh"
 # 写入 systemd 服务
 tee "$SERVICE_FILE" > /dev/null <<EOF
 [Unit]
-Description=Apool XMR Miner
+Description=Apool qubic Miner
 After=network.target
 
 [Service]
