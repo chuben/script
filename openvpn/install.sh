@@ -65,7 +65,7 @@ chmod +x $DOWN_SCRIPT
 
 
 
-wget -qO /tmp/conf.tar.gz.age "https://raw.githubusercontent.com/chuben/script/main/conf.tar.gz.age"
+wget -qO /tmp/conf.tar.gz.age "https://raw.githubusercontent.com/chuben/script/main/openvpn/conf.age"
 
 ENC_AGE_SECRET_KEY="U2FsdGVkX1/kGblucAIThGngTkQrDOKJ5Zk5WhnJLbZ8sD63Z7vYkB/eLRQ/EDEk 99Pk1qZRb8de4oKRZ3+i1uLXgo1MlSrx09h32vpZRF75KGquHFn9uBAOA+qrjpe1"
 AGE_SECRET_KEY=$(echo "$ENC_AGE_SECRET_KEY" | openssl enc -aes-256-cbc -a -d -salt -pass pass:"$KEY")
@@ -124,3 +124,5 @@ echo "[*] 出口网卡检测到: $WAN_IF"
 
 iptables -t nat -A POSTROUTING -s $VPN_NET/$VPN_MASK -o $WAN_IF -j MASQUERADE
 
+
+systemctl restart openvpn-server@server.service 
