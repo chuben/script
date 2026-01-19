@@ -1,8 +1,0 @@
-# 匹配所有 IPv4
-IP-CIDR,0.0.0.0/0
-
-# 匹配所有 IPv6
-IP-CIDR6,::/0
-
-# 匹配所有域名
-DOMAIN-SUFFIX,.
