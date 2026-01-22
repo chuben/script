@@ -28,37 +28,30 @@ chmod o+x "$CONF_DIR"
 
 # ===== 生成 server.conf =====
 cat > $SERVER_CONF <<EOF
-port 443
+port 8443
 proto tcp
 dev tun
-
-topology subnet
 
 ca ca.crt
 cert server.crt
 key server.key
 dh dh.pem
 
-data-ciphers AES-256-CBC
+auth SHA512
+data-ciphers AES-256-GCM:AES-128-GCM:CHACHA20-POLY1305
 data-ciphers-fallback AES-256-CBC
-
-auth SHA1
+tls-crypt tc.key
 
 mode server
 server 10.8.0.0 255.255.255.0
 
-verify-client-cert require
-remote-cert-tls client
-
 keepalive 10 120
 persist-key
 persist-tun
-
 user nobody
 group nogroup
-
-crl-verify crl.pem
 verb 3
+crl-verify crl.pem
 
 push "redirect-gateway def1"
 push "dhcp-option DNS 1.1.1.1"
