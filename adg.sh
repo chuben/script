@@ -23,12 +23,12 @@ echo '''name sstpd
 require-mschap-v2
 nologfd
 nodefaultroute
-ms-dns 192.168.85.1''' > /etc/ppp/options.sstpd 
+ms-dns 192.168.84.1''' > /etc/ppp/options.sstpd 
 
 echo """# Secrets for authentication using CHAP
 # client        server  secret                  IP addresses
 ben * $psw *
-vm * $psw 192.168.85.200""" > /etc/ppp/chap-secrets
+vm * $psw 192.168.84.200""" > /etc/ppp/chap-secrets
 
 curl https://pyenv.run | bash
 
@@ -43,10 +43,10 @@ pyenv install 3.9.7
 
 pyenv global 3.9.7
 
-certbot --nginx --key-type rsa -d us.flunode.icu --non-interactive --agree-tos --email admin@flunode.icu
+certbot --nginx --key-type rsa -d kr.newmanhub.com --non-interactive --agree-tos --email admin@newmanhub.com
 mkdir -p /opt/sstp/
 
-cp -f /etc/letsencrypt/live/us.flunode.icu/* /opt/sstp/.
+cp -f /etc/letsencrypt/live/kr.newmanhub.com/* /opt/sstp/.
 
 pip3  install sstp-server
 
@@ -63,7 +63,7 @@ iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -o $net_name -j MASQUERADE
 netfilter-persistent save
 
 echo '''#!/bin/bash
-/root/.pyenv/shims/sstpd -c  fullchain.pem -k privkey.pem  --local 192.168.85.1 --remote 192.168.85.0/24 -p 9443 -l 0.0.0.0''' > /opt/sstp/start.sh 
+/root/.pyenv/shims/sstpd -c  fullchain.pem -k privkey.pem  --local 192.168.84.1 --remote 192.168.84.0/24 -p 9443 -l 0.0.0.0''' > /opt/sstp/start.sh 
 cd /opt/sstp/
 chmod +x start.sh 
 
