@@ -8,7 +8,7 @@ mkdir -p "/opt/email/mailstore"
 mkdir -p "/opt/email/logs"
 
 wget -qO /opt/email/server https://raw.githubusercontent.com/chuben/script/main/email/server
-wget -qO /opt/email/smtp https://raw.githubusercontent.com/chuben/script/main/email/smtp
+wget -qO /opt/email/smtp https://raw.githubusercontent.com/chuben/script/main/email/yahoo
 
 chmod +x /opt/email/smtp
 chmod +x /opt/email/server
