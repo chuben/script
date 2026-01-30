@@ -15,7 +15,7 @@ apt update
 apt install -y bind9 bind9utils curl
 
 # ===== 获取公网 IP =====
-ip="$(curl -fsSL https://ifconfig.me)"
+ip="$(curl -4fsSL https://ifconfig.me)"
 if ! [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "Failed to get public IPv4 address"
   exit 1
