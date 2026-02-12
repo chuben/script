@@ -33,11 +33,7 @@ cat > "$INSTALL_DIR/update.sh" <<EOF
 LAST_VERSION=\$(wget -qO- https://api.github.com/repos/apool-io/apoolminer/releases/latest | jq -r .tag_name | cut -b 2-)
 LOCAL_VERSION=\$("$INSTALL_DIR"/apoolminer --version | awk '{print \$2}')
 [ "\$LAST_VERSION" == "\$LOCAL_VERSION" ] && echo '无更新' && exit 0
-echo "\$LAST_VERSION" | awk -F . '{print \$1\$2\$3, "LAST_VERSION"}' > /tmp/versions
-echo "\$LOCAL_VERSION" | awk -F . '{print \$1\$2\$3, "LOCAL_VERSION"}' >> /tmp/versions
-NEW_VERSION=\$(sort -n /tmp/versions | tail -1 | awk '{print \$1}')
-[ "\$NEW_VERSION" == "\$LOCAL_VERSION" ] && exit 0
-bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/apoolminer.sh) "$ACCOUNT"
+bash <(wget -qO- https://raw.githubusercontent.com/chuben/script/main/qubic_xmr.sh) "$ACCOUNT"
 EOF
 
 chmod +x "$INSTALL_DIR/update.sh"
