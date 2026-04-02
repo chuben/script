@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 [ "$1" ] && KEY="$1" || exit 1
 
 systemctl stop ss-rust shadow-tls && systemctl disable ss-rust shadow-tls
