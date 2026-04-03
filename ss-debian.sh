@@ -2,10 +2,8 @@
 
 [ "$1" ] && KEY="$1" || exit 1
 
-systemctl stop ss-rust shadow-tls && systemctl disable ss-rust shadow-tls
-
 bash <(wget -qO- -o- https://github.com/233boy/sing-box/raw/main/install.sh)
 
-sing-box del *
+sb del *
 
-sing-box add Trojan 443 "$KEY"
+sb add ss 443 "$KEY" "aes-256-gcm"
