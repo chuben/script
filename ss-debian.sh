@@ -4,6 +4,8 @@
 
 bash <(wget -qO- -o- https://github.com/233boy/sing-box/raw/main/install.sh)
 
-sb del *
+rm -rf /etc/sing-box/conf/*
+
+sing-box restart
 
 sb add ss 443 "$KEY" "aes-256-gcm"
