@@ -8,4 +8,4 @@ rm -rf /etc/sing-box/conf/*
 
 sing-box restart
 
-sb add ss 443 "$KEY" "aes-256-gcm"
+sb add trojan 443 $KEY
