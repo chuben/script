@@ -42,7 +42,7 @@ PostUp   = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j A
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o $nic_name -j MASQUERADE
 ListenPort = 50180
 DNS = 1.1.1.2,1.1.1.3
-MTU = 1420
+MTU = 1492
 
 [Peer]
 PublicKey = $PEER_PUB_KEY
